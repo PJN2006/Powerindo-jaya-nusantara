@@ -1,6 +1,7 @@
 import { supabase } from '@/lib/supabase';
 import { notFound } from 'next/navigation';
 import { Calendar, Eye, User } from 'lucide-react';
+export const dynamic = 'force-dynamic';
 
 export default async function BlogDetailPage({ params }: { params: { slug: string } }) {
   // 1. Ambil data artikel berdasarkan slug
