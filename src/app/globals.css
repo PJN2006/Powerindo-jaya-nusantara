@@ -19,3 +19,14 @@ body {
   color: var(--foreground);
   font-family: var(--font-jakarta);
 }
+
+/* Menghilangkan scrollbar secara paksa untuk class .scrollbar-hide */
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
