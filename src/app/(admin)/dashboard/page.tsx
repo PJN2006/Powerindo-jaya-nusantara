@@ -150,7 +150,7 @@ export default function DashboardPage() {
                     ))}
                   </div>
                 </div>
-                <button disabled={loading} className="w-full py-5 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2">{loading ? <Loader2 className="animate-spin" /> : <Save />} Publish Artikel</button>
+                <button disabled={loading} className="w-full py-5 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer">{loading ? <Loader2 className="animate-spin" /> : <Save />} Publish Artikel</button>
               </form>
             </div>
           </div>
@@ -204,7 +204,7 @@ export default function DashboardPage() {
                     <ImageIcon size={40} /> {gallForm.file ? gallForm.file.name : "Pilih Foto Pekerjaan"}
                   </label>
                 </div>
-                <button disabled={loading} className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg">{loading ? <Loader2 className="animate-spin" /> : "Upload ke Gallery"}</button>
+                <button disabled={loading} className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg cursor-pointer">{loading ? <Loader2 className="animate-spin" /> : "Upload ke Gallery"}</button>
               </form>
             </div>
           </div>

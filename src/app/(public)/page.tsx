@@ -1,12 +1,23 @@
+// 1. Tambahkan baris ini agar data selalu diperbarui (tidak tersangkut cache)
+export const dynamic = 'force-dynamic'
+
+import { supabase } from '@/lib/supabase' // Pastikan path lib ini benar
 import HeroSlider from '@/components/layout/HeroSlider'
 import Reveal from '@/components/layout/Reveal'
 
-export default function HomePage() {
+export default async function HomePage() {
+  // 2. Fetch data Gallery dari tabel 'gallery' yang Anda buat di SQL
+  const { data: galleryItems } = await supabase
+    .from('gallery')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(6); // Mengambil 6 foto terbaru
+
   return (
     <main className="bg-white">
       <HeroSlider />
 
-      {/* Poin 3: About Overview */}
+      {/* Poin 3: About Overview (Logika asli tetap sama) */}
       <section className="py-32 px-6">
         <div className="max-w-7xl mx-auto">
           <Reveal>
@@ -35,7 +46,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Business Units Section */}
+      {/* Business Units Section (Logika asli tetap sama) */}
       <section className="bg-slate-50 py-32 px-6 overflow-hidden">
         <div className="max-w-7xl mx-auto">
           <Reveal>
@@ -60,9 +71,7 @@ export default function HomePage() {
             ].map((item, i) => (
               <Reveal key={i}>
                 <div className="group relative bg-white p-12 rounded-4xl border border-slate-200 transition-all duration-500 hover:-translate-y-4">
-                  {/* Hover Background Effect */}
                   <div className="absolute inset-0 bg-brand-dark scale-95 opacity-0 group-hover:scale-100 group-hover:opacity-100 transition-all duration-500 rounded-4xl z-0" />
-                  
                   <div className="relative z-10">
                     <div className="text-4xl font-black text-slate-100 group-hover:text-white/10 transition-colors mb-8">
                       {item.icon}
@@ -81,25 +90,36 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Gallery Section */}
+      {/* Gallery Section - SEKARANG DYNAMIC MENGGUNAKAN DATA SUPABASE */}
       <section className="py-32 px-6 bg-brand-dark text-white">
         <div className="max-w-7xl mx-auto">
           <div className="mb-16">
             <h2 className="text-sm font-bold text-brand-primary uppercase tracking-[0.4em] mb-4">Gallery</h2>
-            <h3 className="text-4xl font-bold italic">OUR WORK IN ACTION</h3>
+            <h3 className="text-4xl font-bold italic uppercase tracking-tighter">Our Work In Action</h3>
           </div>
           
           <div className="columns-1 md:columns-3 gap-6 space-y-6">
-            {/* Kamu bisa fetch data dari tabel 'gallery' di sini */}
-            <Reveal>
-              <img src="https://images.unsplash.com/photo-1504307651254-35680f356dfd?q=80" className="rounded-3xl hover:opacity-80 transition-opacity" alt="Work 1" />
-            </Reveal>
-            <Reveal>
-              <img src="https://images.unsplash.com/photo-1541888946425-d81bb19480c5?q=80" className="rounded-3xl hover:opacity-80 transition-opacity" alt="Work 2" />
-            </Reveal>
-            <Reveal>
-              <img src="https://images.unsplash.com/photo-1503387762-592deb58ef4e?q=80" className="rounded-3xl hover:opacity-80 transition-opacity" alt="Work 3" />
-            </Reveal>
+            {/* 3. Mapping data dari database Supabase */}
+            {galleryItems && galleryItems.length > 0 ? (
+              galleryItems.map((item) => (
+                <Reveal key={item.id}>
+                  <div className="group relative overflow-hidden rounded-3xl border border-white/10">
+                    <img 
+                      src={item.image_url} 
+                      className="w-full h-full object-cover hover:scale-110 transition-transform duration-700" 
+                      alt={item.title || "Visitec Project"} 
+                    />
+                    {/* Overlay judul saat hover */}
+                    <div className="absolute inset-0 bg-brand-dark/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-6 text-center">
+                       <p className="font-bold text-lg uppercase tracking-widest">{item.title}</p>
+                    </div>
+                  </div>
+                </Reveal>
+              ))
+            ) : (
+              // Tampilan fallback jika data kosong
+              <p className="text-slate-500 italic">No gallery items uploaded yet.</p>
+            )}
           </div>
         </div>
       </section>
