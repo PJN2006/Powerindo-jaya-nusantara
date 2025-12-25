@@ -1,15 +1,30 @@
-import { supabase } from '@/lib/supabase'
+export const dynamic = 'force-dynamic'
+
+// Sesuaikan import ke file yang benar
+import { supabase } from '@/lib/supabase' 
 import Reveal from '@/components/layout/Reveal'
 
+// Definisikan tipe data agar tidak error 'implicitly any'
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string;
+}
+
 export default async function ProductsPage() {
-  const { data: products } = await supabase.from('products').select('*').order('created_at', { ascending: false })
+  const { data: products } = await supabase
+    .from('products')
+    .select('*')
+    .order('created_at', { ascending: false })
 
   return (
     <section className="py-32 px-6 bg-white min-h-screen">
       <div className="max-w-7xl mx-auto">
         <h1 className="text-5xl font-black mb-16 text-brand-dark italic">OUR PRODUCTS</h1>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {products?.map((item) => (
+          {products?.map((item: Product) => ( // Berikan tipe data : Product
             <Reveal key={item.id}>
               <div className="group border border-slate-100 rounded-4xl overflow-hidden shadow-sm hover:shadow-2xl transition-all">
                 <div className="h-72 overflow-hidden">
