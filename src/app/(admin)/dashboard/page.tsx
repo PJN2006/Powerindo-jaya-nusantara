@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Plus, Package, Image as ImageIcon, Loader2, 
-  Trash2, LayoutDashboard, FileText, UploadCloud, Save, X
+  Trash2, LayoutDashboard, FileText, UploadCloud, Save, X, Tag
 } from 'lucide-react';
 
 export default function DashboardPage() {
@@ -15,8 +15,15 @@ export default function DashboardPage() {
   const [products, setProducts] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
   
-  // Form States
-  const [prodForm, setProdForm] = useState({ name: '', desc: '', price: '', file: null as File | null });
+  // List Kategori (Sesuai dengan halaman Katalog)
+  const categories = [
+    "Trafo", "Cubicle", "ATS+LVMDP", "Capasitor Bank", 
+    "Kabel - Tegangan Menengah", "Kabel - Tegangan Rendah", 
+    "Genset", "Penangkal Petir", "Busduct", "Hydrant", "AC"
+  ];
+
+  // Form States - Menambahkan 'category' pada prodForm
+  const [prodForm, setProdForm] = useState({ name: '', desc: '', price: '', category: '', file: null as File | null });
   const [postForm, setPostForm] = useState({ title: '', content: '', files: [] as File[] });
   const [gallForm, setGallForm] = useState({ title: '', file: null as File | null });
 
@@ -41,7 +48,7 @@ export default function DashboardPage() {
     return supabase.storage.from('visitec-assets').getPublicUrl(filePath).data.publicUrl;
   };
 
-  // --- HANDLER: PUBLISH ARTIKEL (MULTIPLE PHOTOS) ---
+  // --- HANDLER: PUBLISH ARTIKEL ---
   const handleAddPost = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -68,19 +75,23 @@ export default function DashboardPage() {
     finally { setLoading(false); }
   };
 
-  // --- HANDLER: TAMBAH PRODUK ---
+  // --- HANDLER: TAMBAH PRODUK (DENGAN KATEGORI) ---
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prodForm.file) return alert('Pilih gambar produk!');
+    if (!prodForm.category) return alert('Pilih kategori produk!');
     setLoading(true);
     try {
       const url = await uploadToStorage(prodForm.file, 'products');
       await supabase.from('products').insert([{ 
-        name: prodForm.name, description: prodForm.desc, 
-        price: parseFloat(prodForm.price), image_url: url 
+        name: prodForm.name, 
+        description: prodForm.desc, 
+        price: parseFloat(prodForm.price), 
+        category: prodForm.category, // Memasukkan kategori ke database
+        image_url: url 
       }]);
       alert('Produk Berhasil Ditambahkan!');
-      setProdForm({ name: '', desc: '', price: '', file: null });
+      setProdForm({ name: '', desc: '', price: '', category: '', file: null });
       fetchData();
     } catch (err: any) { alert(err.message); }
     finally { setLoading(false); }
@@ -161,7 +172,6 @@ export default function DashboardPage() {
                   <img src={post.image_url} className="w-12 h-12 rounded-xl object-cover shrink-0" />
                   <p className="font-bold text-xs truncate">{post.title}</p>
                 </div>
-                {/* Tombol Delete Insight */}
                 <button 
                   onClick={async () => { if(confirm('Hapus artikel ini?')) { await supabase.from('posts').delete().eq('id', post.id); fetchData(); } }}
                   className="p-2 text-red-400 hover:bg-red-50 rounded-xl transition-colors shrink-0"
@@ -181,7 +191,21 @@ export default function DashboardPage() {
             <div className="bg-white p-8 rounded-4xl shadow-xl border border-slate-100 sticky top-32">
               <h2 className="text-2xl font-bold mb-8">Tambah Produk</h2>
               <form onSubmit={handleAddProduct} className="space-y-5">
-                <input type="text" placeholder="Nama Produk" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none" value={prodForm.name} onChange={e => setProdForm({...prodForm, name: e.target.value})} />
+                <input type="text" placeholder="Nama Produk" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold" value={prodForm.name} onChange={e => setProdForm({...prodForm, name: e.target.value})} />
+                
+                {/* --- DROPDOWN KATEGORI --- */}
+                <select 
+                  required 
+                  className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-slate-600 appearance-none cursor-pointer"
+                  value={prodForm.category}
+                  onChange={e => setProdForm({...prodForm, category: e.target.value})}
+                >
+                  <option value="" disabled>Pilih Kategori Produk</option>
+                  {categories.map(cat => (
+                    <option key={cat} value={cat}>{cat}</option>
+                  ))}
+                </select>
+
                 <input type="number" placeholder="Harga" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none" value={prodForm.price} onChange={e => setProdForm({...prodForm, price: e.target.value})} />
                 <textarea placeholder="Deskripsi..." required className="w-full p-4 bg-slate-50 rounded-2xl outline-none h-32" value={prodForm.desc} onChange={e => setProdForm({...prodForm, desc: e.target.value})} />
                 <input type="file" id="prodFile" hidden onChange={e => setProdForm({...prodForm, file: e.target.files?.[0] || null})} />
@@ -191,10 +215,22 @@ export default function DashboardPage() {
             </div>
           </div>
           <div className="lg:col-span-2 space-y-4">
+            <h3 className="font-bold text-brand-dark uppercase tracking-wider text-sm mb-4">Daftar Inventori</h3>
             {products.map(p => (
               <div key={p.id} className="bg-white p-5 rounded-3xl border flex justify-between items-center shadow-sm">
-                <div className="flex gap-5 items-center"><img src={p.image_url} className="w-20 h-20 rounded-2xl object-cover" /><div><h4 className="font-bold text-lg">{p.name}</h4><p className="text-brand-primary font-black">Rp {Number(p.price).toLocaleString('id-ID')}</p></div></div>
-                <button onClick={async () => { if(confirm('Hapus?')) { await supabase.from('products').delete().eq('id', p.id); fetchData(); } }} className="p-4 text-red-400 hover:bg-red-50 rounded-2xl"><Trash2 size={22} /></button>
+                <div className="flex gap-5 items-center">
+                  <img src={p.image_url} className="w-20 h-20 rounded-2xl object-cover" />
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="bg-blue-50 text-brand-primary text-[10px] font-black px-2 py-0.5 rounded-full border border-blue-100 uppercase tracking-tighter flex items-center gap-1">
+                        <Tag size={10} /> {p.category || 'N/A'}
+                      </span>
+                    </div>
+                    <h4 className="font-bold text-lg text-brand-dark">{p.name}</h4>
+                    <p className="text-brand-primary font-black">Rp {Number(p.price).toLocaleString('id-ID')}</p>
+                  </div>
+                </div>
+                <button onClick={async () => { if(confirm('Hapus produk ini?')) { await supabase.from('products').delete().eq('id', p.id); fetchData(); } }} className="p-4 text-red-400 hover:bg-red-50 rounded-2xl transition-colors"><Trash2 size={22} /></button>
               </div>
             ))}
           </div>
@@ -225,7 +261,6 @@ export default function DashboardPage() {
                 <img src={item.image_url} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-all flex flex-col items-center justify-center p-4 gap-4">
                   <p className="text-white text-xs font-bold text-center">{item.title}</p>
-                  {/* Tombol Delete Gallery */}
                   <button 
                     onClick={async () => { if(confirm('Hapus foto ini dari gallery?')) { await supabase.from('gallery').delete().eq('id', item.id); fetchData(); } }}
                     className="p-3 bg-red-500 text-white rounded-2xl hover:bg-red-600 transition-colors shadow-xl"
