@@ -1,6 +1,7 @@
 export const dynamic = 'force-dynamic';
 import { supabase } from '@/lib/supabase';
 import Link from 'next/link';
+import { MessageCircle, Phone } from 'lucide-react'; // Import ikon tambahan
 
 export default async function BlogListPage() {
   // Fetch data dari Supabase
@@ -10,7 +11,7 @@ export default async function BlogListPage() {
     .order('created_at', { ascending: false });
 
   return (
-    <div className="max-w-7xl mx-auto px-6 py-20">
+    <div className="max-w-7xl mx-auto px-6 py-20 relative"> {/* Tambahkan relative di sini */}
       <div className="mb-12">
         <h2 className="text-3xl font-bold text-brand-dark">Latest News & Insights</h2>
         <div className="h-1 w-20 bg-brand-primary mt-4"></div>
@@ -40,6 +41,40 @@ export default async function BlogListPage() {
             </div>
           </Link>
         ))}
+      </div>
+
+      {/* --- FLOATING WHATSAPP BUTTON --- */}
+      <div className="fixed bottom-8 right-8 z-100 flex flex-col items-end group">
+        {/* Menu Pilihan WhatsApp yang muncul saat di-hover */}
+        <div className="flex flex-col gap-3 mb-4 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
+          <a 
+            href="https://wa.me/6281252505111" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm"
+          >
+            <div className="bg-green-500 p-1.5 rounded-lg text-white">
+              <Phone size={14} />
+            </div>
+            Customer Service 1
+          </a>
+          <a 
+            href="https://wa.me/6282245616400" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm"
+          >
+            <div className="bg-green-500 p-1.5 rounded-lg text-white">
+              <Phone size={14} />
+            </div>
+            Customer Service 2
+          </a>
+        </div>
+
+        {/* Tombol Utama (Icon WhatsApp) */}
+        <button className="bg-green-500 text-white p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300">
+          <MessageCircle size={32} fill="currentColor" />
+        </button>
       </div>
     </div>
   );
