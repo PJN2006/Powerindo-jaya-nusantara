@@ -1,4 +1,4 @@
-import { Mail, MapPin, Phone, Linkedin, Instagram, Twitter } from 'lucide-react'
+import { Mail, MapPin, Phone, Linkedin, Instagram, Twitter, Facebook } from 'lucide-react'
 
 export default function Footer() {
   return (
@@ -16,7 +16,7 @@ export default function Footer() {
               Leading the digital frontier with robust infrastructure and innovative enterprise solutions.
             </p>
             <div className="flex gap-4">
-              {[Linkedin, Instagram, Twitter].map((Icon, i) => (
+              {[Facebook].map((Icon, i) => (
                 <a key={i} href="#" className="w-10 h-10 border border-white/10 rounded-full flex items-center justify-center hover:bg-brand-primary transition-colors">
                   <Icon size={18} />
                 </a>
@@ -45,6 +45,7 @@ export default function Footer() {
               <li className="flex gap-4">
                 <Phone className="text-brand-primary shrink-0" size={20} />
                 <span>+6281252505111</span>
+                <br></br>
                 <span>+6282245616400</span>
               </li>
               <li className="flex gap-4">
