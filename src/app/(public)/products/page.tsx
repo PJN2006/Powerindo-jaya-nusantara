@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { supabase } from '@/lib/supabase' 
 import Reveal from '@/components/layout/Reveal'
-import { MessageCircle, Phone, Tag } from 'lucide-react' 
+import { MessageCircle, Phone, Tag, PackageSearch } from 'lucide-react' 
 import Link from 'next/link'
 
 // Definisikan tipe data
@@ -21,19 +21,21 @@ export default async function ProductsPage({
 }: {
   searchParams: { category?: string }
 }) {
-  const selectedCategory = searchParams.category;
+  // Gunakan decodeURIComponent untuk menangani karakter khusus (seperti + atau %20) di URL
+  const selectedCategory = searchParams.category ? decodeURIComponent(searchParams.category) : undefined;
 
-  // List Kategori sesuai permintaan
+  // List Kategori (Harus sama persis dengan yang ada di Dashboard Admin)
   const categories = [
     "Trafo", "Cubicle", "ATS+LVMDP", "Capasitor Bank", 
     "Kabel - Tegangan Menengah", "Kabel - Tegangan Rendah", 
     "Genset", "Penangkal Petir", "Busduct", "Hydrant", "AC"
   ];
 
-  // Logic Query: Jika ada kategori terpilih, filter berdasarkan kategori tersebut
+  // Logic Query
   let query = supabase.from('products').select('*').order('created_at', { ascending: false });
   
-  if (selectedCategory) {
+  // Filter yang lebih ketat: Hanya jalankan eq jika selectedCategory benar-benar ada nilainya
+  if (selectedCategory && selectedCategory.trim() !== "") {
     query = query.eq('category', selectedCategory);
   }
 
@@ -63,7 +65,7 @@ export default async function ProductsPage({
           {categories.map((cat) => (
             <Link 
               key={cat}
-              href={`/products?category=${cat}`}
+              href={`/products?category=${encodeURIComponent(cat)}`} // Gunakan encode agar URL aman
               className={`px-8 py-3 rounded-full border-2 text-xs font-bold tracking-widest transition-all duration-300 shadow-sm ${
                 selectedCategory === cat 
                 ? 'bg-brand-primary text-white border-brand-primary shadow-blue-200 shadow-lg' 
@@ -82,10 +84,11 @@ export default async function ProductsPage({
               <Reveal key={item.id}>
                 <div className="group border border-slate-100 rounded-4xl overflow-hidden shadow-sm hover:shadow-2xl transition-all bg-white">
                   <div className="h-72 overflow-hidden relative">
-                    {/* Badge Kategori di atas foto */}
                     <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur px-4 py-1.5 rounded-full flex items-center gap-2 shadow-sm border border-slate-100">
                         <Tag size={12} className="text-brand-primary" />
-                        <span className="text-[10px] font-black text-brand-dark uppercase tracking-wider">{item.category || 'General'}</span>
+                        <span className="text-[10px] font-black text-brand-dark uppercase tracking-wider">
+                          {item.category || 'General'}
+                        </span>
                     </div>
                     <img src={item.image_url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
                   </div>
@@ -106,8 +109,11 @@ export default async function ProductsPage({
             ))}
           </div>
         ) : (
-          <div className="py-32 text-center bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200">
-            <p className="text-slate-400 font-medium italic">Belum ada produk untuk kategori "{selectedCategory}"</p>
+          /* Tampilan jika hasil filter kosong */
+          <div className="py-32 flex flex-col items-center justify-center bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200">
+            <PackageSearch size={48} className="text-slate-300 mb-4" />
+            <p className="text-slate-400 font-medium italic">Tidak ada produk ditemukan untuk kategori "{selectedCategory}"</p>
+            <Link href="/products" className="mt-4 text-brand-primary font-bold text-sm hover:underline">Lihat Semua Produk</Link>
           </div>
         )}
       </div>
@@ -115,30 +121,15 @@ export default async function ProductsPage({
       {/* --- FLOATING WHATSAPP BUTTON --- */}
       <div className="fixed bottom-8 right-8 z-100 flex flex-col items-end group">
         <div className="flex flex-col gap-3 mb-4 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
-          <a 
-            href="https://wa.me/6281252505111" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm"
-          >
-            <div className="bg-green-500 p-1.5 rounded-lg text-white">
-              <Phone size={14} />
-            </div>
+          <a href="https://wa.me/6281252505111" target="_blank" rel="noopener noreferrer" className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm">
+            <div className="bg-green-500 p-1.5 rounded-lg text-white"><Phone size={14} /></div>
             Customer Service 1
           </a>
-          <a 
-            href="https://wa.me/6282245616400" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm"
-          >
-            <div className="bg-green-500 p-1.5 rounded-lg text-white">
-              <Phone size={14} />
-            </div>
+          <a href="https://wa.me/6282245616400" target="_blank" rel="noopener noreferrer" className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm">
+            <div className="bg-green-500 p-1.5 rounded-lg text-white"><Phone size={14} /></div>
             Customer Service 2
           </a>
         </div>
-
         <button className="bg-green-500 text-white p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 focus:outline-none">
           <MessageCircle size={32} fill="currentColor" />
         </button>
