@@ -215,21 +215,18 @@ export default function DashboardPage() {
                 <div className="space-y-4">
                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Gallery Foto Artikel</p>
                    <div className="flex flex-wrap gap-3">
-                      {/* Foto Lama */}
                       {postForm.existingImages.map((url, idx) => (
                         <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-brand-primary/20 group">
                           <img src={url} className="w-full h-full object-cover" />
                           <button type="button" onClick={() => setPostForm({...postForm, existingImages: postForm.existingImages.filter((_, i) => i !== idx)})} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"><X size={12} /></button>
                         </div>
                       ))}
-                      {/* Preview Foto Baru */}
                       {postForm.files.map((file, idx) => (
                         <div key={idx} className="relative w-24 h-24 rounded-2xl overflow-hidden border-2 border-dashed border-brand-primary">
                           <img src={URL.createObjectURL(file)} className="w-full h-full object-cover opacity-60" />
                           <button type="button" onClick={() => setPostForm({...postForm, files: postForm.files.filter((_, i) => i !== idx)})} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-1"><X size={12} /></button>
                         </div>
                       ))}
-                      {/* Input Upload */}
                       <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors text-slate-400">
                         <Plus size={24} />
                         <span className="text-[10px] font-bold mt-1">Tambah</span>
@@ -275,22 +272,34 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-bold mb-8">{editingProdId ? 'Edit Produk' : 'Tambah Produk'}</h2>
               <form onSubmit={handleAddProduct} className="space-y-5">
                 <input type="text" placeholder="Nama Produk" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold" value={prodForm.name} onChange={e => setProdForm({...prodForm, name: e.target.value})} />
+                
                 <select required className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-slate-600 cursor-pointer" value={prodForm.category} onChange={e => setProdForm({...prodForm, category: e.target.value})}>
                   <option value="" disabled>Pilih Kategori Produk</option>
                   {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
+
                 <input type="number" placeholder="Harga" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none" value={prodForm.price} onChange={e => setProdForm({...prodForm, price: e.target.value})} />
                 <textarea placeholder="Deskripsi..." required className="w-full p-4 bg-slate-50 rounded-2xl outline-none h-32" value={prodForm.desc} onChange={e => setProdForm({...prodForm, desc: e.target.value})} />
                 
                 <div className="space-y-4">
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Foto Produk</p>
                    <div className="flex flex-wrap gap-2">
+                      {/* Foto yang sudah ada di database */}
                       {prodForm.existingImages.map((url, i) => (
                         <div key={i} className="relative w-12 h-12 rounded-lg overflow-hidden border">
                           <img src={url} className="w-full h-full object-cover" />
                           <button type="button" onClick={() => setProdForm({...prodForm, existingImages: prodForm.existingImages.filter((_, idx) => idx !== i)})} className="absolute top-0 right-0 bg-red-500 text-white rounded-bl-lg p-0.5"><X size={10} /></button>
                         </div>
                       ))}
+                      
+                      {/* --- PERBAIKAN: Preview Foto Baru yang akan diupload --- */}
+                      {prodForm.files.map((file, idx) => (
+                        <div key={idx} className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-dashed border-brand-primary">
+                          <img src={URL.createObjectURL(file)} className="w-full h-full object-cover opacity-70" />
+                          <button type="button" onClick={() => setProdForm({...prodForm, files: prodForm.files.filter((_, i) => i !== idx)})} className="absolute top-0 right-0 bg-red-500 text-white p-0.5"><X size={10} /></button>
+                        </div>
+                      ))}
+
                       <label className="w-12 h-12 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer text-slate-400 hover:bg-slate-50">
                         <Plus size={16} /><input type="file" multiple hidden onChange={e => setProdForm({...prodForm, files: [...prodForm.files, ...Array.from(e.target.files || [])]})} />
                       </label>
@@ -341,7 +350,13 @@ export default function DashboardPage() {
                 <div className="border-2 border-dashed border-slate-200 p-10 rounded-3xl text-center">
                   <input type="file" id="gallFile" hidden onChange={e => setGallForm({...gallForm, file: e.target.files?.[0] || null})} />
                   <label htmlFor="gallFile" className="cursor-pointer flex flex-col items-center gap-3 text-slate-400 font-bold">
-                    <ImageIcon size={40} /> {gallForm.file ? gallForm.file.name : "Pilih Foto Pekerjaan"}
+                    {/* Preview Foto Gallery Baru */}
+                    {gallForm.file ? (
+                      <div className="w-full aspect-video rounded-xl overflow-hidden mb-2">
+                         <img src={URL.createObjectURL(gallForm.file)} className="w-full h-full object-cover" />
+                      </div>
+                    ) : <ImageIcon size={40} />}
+                    {gallForm.file ? gallForm.file.name : "Pilih Foto Pekerjaan"}
                   </label>
                 </div>
                 <button disabled={loading} className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg cursor-pointer">{loading ? <Loader2 className="animate-spin" /> : "Upload ke Gallery"}</button>
