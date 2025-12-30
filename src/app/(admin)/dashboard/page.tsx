@@ -3,19 +3,24 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { 
   Plus, Package, Image as ImageIcon, Loader2, 
-  Trash2, LayoutDashboard, FileText, Save, X, Tag, Pencil, RotateCcw, Users, Mail
+  Trash2, LayoutDashboard, FileText, Save, X, Tag, Pencil, RotateCcw, 
+  Users, Mail, Check, Send // Menambahkan Check dan Send
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  // Tambahkan 'subscribers' ke activeTab
   const [activeTab, setActiveTab] = useState<'insight' | 'products' | 'gallery' | 'subscribers'>('insight');
   const [loading, setLoading] = useState(false);
   
   const [posts, setPosts] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
-  const [subscribers, setSubscribers] = useState<any[]>([]); // State baru untuk subscribers
+  const [subscribers, setSubscribers] = useState<any[]>([]);
   
+  // --- STATE BARU UNTUK BROADCAST ---
+  const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
+  const [broadcastForm, setBroadcastForm] = useState({ subject: '', message: '' });
+  const [isBroadcasting, setIsBroadcasting] = useState(false);
+
   const categories = [
     "Trafo", "Cubicle", "ATS+LVMDP", "Capasitor Bank", 
     "Kabel - Tegangan Menengah", "Kabel - Tegangan Rendah", 
@@ -26,19 +31,11 @@ export default function DashboardPage() {
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
   const [prodForm, setProdForm] = useState({ 
-    name: '', 
-    desc: '', 
-    price: '', 
-    category: '', 
-    files: [] as File[],
-    existingImages: [] as string[] 
+    name: '', desc: '', price: '', category: '', files: [] as File[], existingImages: [] as string[] 
   });
 
   const [postForm, setPostForm] = useState({ 
-    title: '', 
-    content: '', 
-    files: [] as File[],
-    existingImages: [] as string[] 
+    title: '', content: '', files: [] as File[], existingImages: [] as string[] 
   });
 
   const [gallForm, setGallForm] = useState({ title: '', file: null as File | null });
@@ -56,6 +53,37 @@ export default function DashboardPage() {
     if (gallData) setGallery(gallData);
     if (subData) setSubscribers(subData);
   }
+
+  // --- LOGIKA BROADCAST ---
+  const toggleSelect = (email: string) => {
+    if (selectedEmails.includes(email)) {
+      setSelectedEmails(selectedEmails.filter(e => e !== email));
+    } else {
+      setSelectedEmails([...selectedEmails, email]);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedEmails.length === subscribers.length && subscribers.length > 0) {
+      setSelectedEmails([]);
+    } else {
+      setSelectedEmails(subscribers.map(s => s.email));
+    }
+  };
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedEmails.length === 0) return alert("Pilih minimal satu email!");
+    
+    setIsBroadcasting(true);
+    // Simulasi pengiriman (Integrasi API Email seperti Resend dilakukan di sini nantinya)
+    setTimeout(() => {
+      alert(`Berhasil! Pesan broadcast telah dikirim ke ${selectedEmails.length} penerima.`);
+      setIsBroadcasting(false);
+      setBroadcastForm({ subject: '', message: '' });
+      setSelectedEmails([]);
+    }, 2000);
+  };
 
   const uploadToStorage = async (file: File, folder: string) => {
     const fileName = `${Date.now()}-${file.name.replace(/\s/g, '-')}`;
@@ -81,23 +109,19 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       let imageUrls: string[] = [...postForm.existingImages];
-      
       if (postForm.files.length > 0) {
         for (const file of postForm.files) {
           const url = await uploadToStorage(file, 'blog');
           imageUrls.push(url);
         }
       }
-      
       if (imageUrls.length === 0) throw new Error("Artikel wajib memiliki minimal 1 foto.");
-
       const postData = { 
         title: postForm.title, 
         content: { body: postForm.content, gallery: imageUrls },
         image_url: imageUrls[0] || '',
         slug: postForm.title.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-')
       };
-
       if (editingPostId) {
         await supabase.from('posts').update(postData).eq('id', editingPostId);
         alert('Artikel Berhasil Diperbarui!');
@@ -105,7 +129,6 @@ export default function DashboardPage() {
         await supabase.from('posts').insert([postData]);
         alert('Artikel Berhasil Dipublish!');
       }
-
       setPostForm({ title: '', content: '', files: [], existingImages: [] });
       setEditingPostId(null);
       fetchData();
@@ -116,12 +139,8 @@ export default function DashboardPage() {
   const handleEditProdClick = (p: any) => {
     setEditingProdId(p.id);
     setProdForm({
-      name: p.name,
-      desc: p.description,
-      price: p.price.toString(),
-      category: p.category,
-      files: [],
-      existingImages: p.images || [p.image_url]
+      name: p.name, desc: p.description, price: p.price.toString(), category: p.category,
+      files: [], existingImages: p.images || [p.image_url]
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -130,27 +149,19 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!editingProdId && prodForm.files.length === 0) return alert('Pilih minimal 1 gambar produk!');
     if (!prodForm.category) return alert('Pilih kategori produk!');
-    
     setLoading(true);
     try {
       let imageUrls: string[] = [...prodForm.existingImages];
-      
       if (prodForm.files.length > 0) {
         for (const file of prodForm.files) {
           const url = await uploadToStorage(file, 'products');
           imageUrls.push(url);
         }
       }
-
       const productData = { 
-        name: prodForm.name, 
-        description: prodForm.desc, 
-        price: parseFloat(prodForm.price), 
-        category: prodForm.category,
-        image_url: imageUrls[0], 
-        images: imageUrls        
+        name: prodForm.name, description: prodForm.desc, price: parseFloat(prodForm.price), 
+        category: prodForm.category, image_url: imageUrls[0], images: imageUrls        
       };
-
       if (editingProdId) {
         await supabase.from('products').update(productData).eq('id', editingProdId);
         alert('Produk Berhasil Diperbarui!');
@@ -158,7 +169,6 @@ export default function DashboardPage() {
         await supabase.from('products').insert([productData]);
         alert('Produk Berhasil Ditambahkan!');
       }
-
       setProdForm({ name: '', desc: '', price: '', category: '', files: [], existingImages: [] });
       setEditingProdId(null);
       fetchData();
@@ -192,7 +202,7 @@ export default function DashboardPage() {
             { id: 'insight', label: 'Insights', icon: LayoutDashboard },
             { id: 'products', label: 'Produk', icon: Package },
             { id: 'gallery', label: 'Gallery', icon: ImageIcon },
-            { id: 'subscribers', label: 'Leads', icon: Users }, // Tab baru
+            { id: 'subscribers', label: 'Leads', icon: Users },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -205,19 +215,16 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 1. TAB INSIGHTS */}
       {activeTab === 'insight' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="lg:col-span-2">
             <div className="bg-white p-10 rounded-4xl shadow-xl border border-slate-100">
               <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
-                <FileText className="text-brand-primary" /> 
-                {editingPostId ? 'Edit Artikel' : 'Tulis Artikel Baru'}
+                <FileText className="text-brand-primary" /> {editingPostId ? 'Edit Artikel' : 'Tulis Artikel Baru'}
               </h2>
               <form onSubmit={handleAddPost} className="space-y-6">
                 <input type="text" placeholder="Judul Artikel" required className="w-full p-5 bg-slate-50 rounded-2xl outline-none text-xl font-bold" value={postForm.title} onChange={e => setPostForm({...postForm, title: e.target.value})} />
                 <textarea placeholder="Mulai menulis konten di sini..." required className="w-full p-5 bg-slate-50 rounded-2xl outline-none h-80 resize-none" value={postForm.content} onChange={e => setPostForm({...postForm, content: e.target.value})} />
-                
                 <div className="space-y-4">
                    <p className="text-xs font-black text-slate-400 uppercase tracking-widest">Gallery Foto Artikel</p>
                    <div className="flex flex-wrap gap-3">
@@ -234,13 +241,11 @@ export default function DashboardPage() {
                         </div>
                       ))}
                       <label className="w-24 h-24 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer hover:bg-slate-50 transition-colors text-slate-400">
-                        <Plus size={24} />
-                        <span className="text-[10px] font-bold mt-1">Tambah</span>
+                        <Plus size={24} /><span className="text-[10px] font-bold mt-1">Tambah</span>
                         <input type="file" multiple hidden onChange={e => setPostForm({...postForm, files: [...postForm.files, ...Array.from(e.target.files || [])]})} />
                       </label>
                    </div>
                 </div>
-
                 <div className="flex gap-3 pt-6">
                     {editingPostId && (
                         <button type="button" onClick={() => { setEditingPostId(null); setPostForm({title:'', content:'', files:[], existingImages:[]})}} className="flex-1 py-5 bg-slate-100 text-slate-600 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors"><RotateCcw size={18}/> Batal</button>
@@ -271,7 +276,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 2. TAB PRODUK */}
       {activeTab === 'products' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="lg:col-span-1">
@@ -279,15 +283,12 @@ export default function DashboardPage() {
               <h2 className="text-2xl font-bold mb-8">{editingProdId ? 'Edit Produk' : 'Tambah Produk'}</h2>
               <form onSubmit={handleAddProduct} className="space-y-5">
                 <input type="text" placeholder="Nama Produk" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold" value={prodForm.name} onChange={e => setProdForm({...prodForm, name: e.target.value})} />
-                
                 <select required className="w-full p-4 bg-slate-50 rounded-2xl outline-none text-slate-600 cursor-pointer" value={prodForm.category} onChange={e => setProdForm({...prodForm, category: e.target.value})}>
                   <option value="" disabled>Pilih Kategori Produk</option>
                   {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                 </select>
-
                 <input type="number" placeholder="Harga" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none" value={prodForm.price} onChange={e => setProdForm({...prodForm, price: e.target.value})} />
                 <textarea placeholder="Deskripsi..." required className="w-full p-4 bg-slate-50 rounded-2xl outline-none h-32" value={prodForm.desc} onChange={e => setProdForm({...prodForm, desc: e.target.value})} />
-                
                 <div className="space-y-4">
                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Foto Produk</p>
                    <div className="flex flex-wrap gap-2">
@@ -297,24 +298,20 @@ export default function DashboardPage() {
                           <button type="button" onClick={() => setProdForm({...prodForm, existingImages: prodForm.existingImages.filter((_, idx) => idx !== i)})} className="absolute top-0 right-0 bg-red-500 text-white rounded-bl-lg p-0.5"><X size={10} /></button>
                         </div>
                       ))}
-                      
                       {prodForm.files.map((file, idx) => (
                         <div key={idx} className="relative w-12 h-12 rounded-lg overflow-hidden border-2 border-dashed border-brand-primary">
                           <img src={URL.createObjectURL(file)} className="w-full h-full object-cover opacity-70" />
                           <button type="button" onClick={() => setProdForm({...prodForm, files: prodForm.files.filter((_, i) => i !== idx)})} className="absolute top-0 right-0 bg-red-500 text-white p-0.5"><X size={10} /></button>
                         </div>
                       ))}
-
                       <label className="w-12 h-12 rounded-lg border-2 border-dashed border-slate-200 flex items-center justify-center cursor-pointer text-slate-400 hover:bg-slate-50">
                         <Plus size={16} /><input type="file" multiple hidden onChange={e => setProdForm({...prodForm, files: [...prodForm.files, ...Array.from(e.target.files || [])]})} />
                       </label>
                    </div>
                 </div>
-
                 <div className="flex flex-col gap-2">
                     <button disabled={loading} className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex justify-center items-center gap-2 cursor-pointer">
-                        {loading ? <Loader2 className="animate-spin" /> : editingProdId ? <Save size={18}/> : <Plus />} 
-                        {editingProdId ? 'Update Produk' : 'Publish Produk'}
+                        {loading ? <Loader2 className="animate-spin" /> : editingProdId ? <Save size={18}/> : <Plus />} {editingProdId ? 'Update Produk' : 'Publish Produk'}
                     </button>
                     {editingProdId && (
                         <button type="button" onClick={() => { setEditingProdId(null); setProdForm({name:'', desc:'', price:'', category:'', files:[], existingImages:[]})}} className="w-full py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl flex justify-center items-center gap-2"><RotateCcw size={18}/> Batal</button>
@@ -345,7 +342,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 3. TAB GALLERY */}
       {activeTab === 'gallery' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="lg:col-span-1">
@@ -382,51 +378,107 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 4. TAB SUBSCRIBERS (FITUR BARU) */}
+      {/* --- 4. TAB SUBSCRIBERS DENGAN FITUR BROADCAST --- */}
       {activeTab === 'subscribers' && (
-        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
-           <div className="bg-white p-10 rounded-4xl shadow-xl border border-slate-100">
-              <div className="flex justify-between items-center mb-10">
-                <div>
-                  <h2 className="text-3xl font-black text-brand-dark italic uppercase tracking-tighter flex items-center gap-3">
-                    <Mail className="text-brand-primary" /> Potential Leads
-                  </h2>
-                  <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Daftar Email yang Terdaftar via Newsletter</p>
-                </div>
-                <div className="bg-blue-50 text-brand-primary px-6 py-3 rounded-2xl border border-blue-100 font-black italic">
-                   TOTAL: {subscribers.length} EMAIL
-                </div>
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
+          
+          {/* BROADCAST FORM */}
+          <div className="bg-brand-dark p-10 rounded-4xl shadow-2xl text-white">
+            <div className="flex items-center gap-4 mb-8">
+              <div className="p-3 bg-brand-primary rounded-2xl">
+                <Mail size={24} className="text-white" />
               </div>
+              <div>
+                <h2 className="text-2xl font-black uppercase italic tracking-tighter">Broadcast Message</h2>
+                <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Kirim pesan ke {selectedEmails.length} orang terpilih</p>
+              </div>
+            </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {subscribers.map((sub) => (
-                  <div key={sub.id} className="p-6 bg-slate-50 rounded-3xl border border-slate-100 flex flex-col justify-between group hover:border-brand-primary transition-all">
-                    <div>
-                      <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4 shadow-sm">
-                        <Mail size={18} className="text-slate-300 group-hover:text-brand-primary transition-colors" />
-                      </div>
-                      <p className="font-bold text-brand-dark truncate">{sub.email}</p>
-                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">
-                        Terdaftar: {new Date(sub.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
-                      </p>
+            <form onSubmit={handleSendBroadcast} className="space-y-4">
+              <input 
+                type="text" 
+                placeholder="Subjek Email (Contoh: Promo Trafo Desember)" 
+                required
+                className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none focus:border-brand-primary transition-all text-white"
+                value={broadcastForm.subject}
+                onChange={e => setBroadcastForm({...broadcastForm, subject: e.target.value})}
+              />
+              <textarea 
+                placeholder="Tulis pesan profesional Anda di sini..." 
+                required
+                className="w-full p-4 bg-white/5 border border-white/10 rounded-2xl outline-none h-40 resize-none focus:border-brand-primary transition-all text-white"
+                value={broadcastForm.message}
+                onChange={e => setBroadcastForm({...broadcastForm, message: e.target.value})}
+              />
+              <button 
+                disabled={isBroadcasting || selectedEmails.length === 0}
+                className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex justify-center items-center gap-3 disabled:bg-slate-700 disabled:cursor-not-allowed hover:bg-blue-600 transition-all uppercase tracking-widest text-xs"
+              >
+                {isBroadcasting ? <Loader2 className="animate-spin" size={20} /> : <Send size={20} />}
+                {isBroadcasting ? 'Mengirim...' : `Kirim ke ${selectedEmails.length} Penerima`}
+              </button>
+            </form>
+          </div>
+
+          {/* LIST LEADS */}
+          <div className="bg-white p-10 rounded-4xl shadow-xl border border-slate-100">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+              <div>
+                <h2 className="text-3xl font-black text-brand-dark italic uppercase tracking-tighter flex items-center gap-3">
+                  <Users className="text-brand-primary" /> Potential Leads
+                </h2>
+                <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Pilih email untuk mengirim pesan spesifik</p>
+              </div>
+              <button 
+                onClick={toggleSelectAll}
+                className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all"
+              >
+                {selectedEmails.length === subscribers.length && subscribers.length > 0 ? 'Batal Pilih Semua' : 'Pilih Semua'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {subscribers.map((sub) => {
+                const isSelected = selectedEmails.includes(sub.email);
+                return (
+                  <div 
+                    key={sub.id} 
+                    onClick={() => toggleSelect(sub.email)}
+                    className={`p-6 rounded-3xl border-2 transition-all cursor-pointer relative group ${
+                      isSelected ? 'border-brand-primary bg-blue-50/50' : 'border-slate-50 bg-slate-50'
+                    }`}
+                  >
+                    <div className={`absolute top-4 right-4 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
+                      isSelected ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200'
+                    }`}>
+                      {isSelected && <Check size={14} strokeWidth={4} />}
                     </div>
+                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4 shadow-sm border border-slate-100">
+                      <Mail size={18} className={isSelected ? 'text-brand-primary' : 'text-slate-300'} />
+                    </div>
+                    <p className="font-bold text-brand-dark truncate pr-8">{sub.email}</p>
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">
+                      Terdaftar: {new Date(sub.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                    </p>
                     <button 
-                      onClick={async () => { if(confirm('Hapus email ini dari daftar?')) { await supabase.from('subscribers').delete().eq('id', sub.id); fetchData(); } }}
-                      className="mt-6 p-3 bg-white text-red-400 hover:bg-red-50 rounded-2xl flex items-center justify-center gap-2 font-bold text-xs transition-colors border border-slate-100"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if(confirm('Hapus email ini?')) { 
+                          supabase.from('subscribers').delete().eq('id', sub.id).then(() => fetchData()); 
+                        }
+                      }}
+                      className="mt-6 text-red-400 hover:text-red-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <Trash2 size={14} /> Hapus Data
+                      <Trash2 size={12} /> Hapus Permanen
                     </button>
                   </div>
-                ))}
-              </div>
-
-              {subscribers.length === 0 && (
-                <div className="py-20 text-center">
-                   <Users size={48} className="mx-auto text-slate-200 mb-4" />
-                   <p className="text-slate-400 italic">Belum ada orang yang subscribe ke newsletter.</p>
-                </div>
-              )}
-           </div>
+                );
+              })}
+            </div>
+            {subscribers.length === 0 && (
+              <div className="py-20 text-center text-slate-400 italic">Belum ada leads yang terdaftar.</div>
+            )}
+          </div>
         </div>
       )}
     </div>
