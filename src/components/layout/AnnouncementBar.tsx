@@ -12,48 +12,56 @@ export default function AnnouncementBar() {
     fetchLatestAnnouncement()
   }, [])
 
+  // Logika untuk mengatur jarak Navbar secara dinamis
+  useEffect(() => {
+    if (isVisible && announcement) {
+      document.documentElement.style.setProperty('--announcement-height', '40px');
+    } else {
+      document.documentElement.style.setProperty('--announcement-height', '0px');
+    }
+  }, [isVisible, announcement]);
+
   async function fetchLatestAnnouncement() {
     const now = new Date().toISOString();
-    
     const { data } = await supabase
         .from('announcements')
         .select('*')
-        // Ambil yang (expires_at kosong) ATAU (expires_at masih di masa depan)
         .or(`expires_at.is.null,expires_at.gt.${now}`) 
         .order('created_at', { ascending: false })
         .limit(1)
         .single()
     
     if (data) setAnnouncement(data)
-    }
+  }
 
   if (!announcement || !isVisible) return null
 
   return (
     <AnimatePresence>
-      <motion.div 
-        initial={{ y: -50, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: -50, opacity: 0 }}
-        className="fixed top-0 left-0 w-full z-200 bg-brand-primary text-white py-3 px-6 shadow-xl"
-      >
-        <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 overflow-hidden">
-            <Megaphone size={18} className="shrink-0 animate-bounce" />
-            <p className="text-xs md:text-sm font-bold truncate tracking-wide">
-              <span className="uppercase opacity-80 mr-2">[{announcement.subject}]</span>
-              {announcement.message}
-            </p>
+      {isVisible && announcement && (
+        <motion.div 
+          initial={{ height: 0, opacity: 0 }}
+          animate={{ height: '40px', opacity: 1 }}
+          exit={{ height: 0, opacity: 0 }}
+          className="fixed top-0 left-0 w-full z-100 bg-brand-primary text-white flex items-center shadow-md overflow-hidden"
+        >
+          <div className="max-w-7xl mx-auto w-full px-6 flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3 overflow-hidden">
+              <Megaphone size={14} className="shrink-0 animate-bounce" />
+              <p className="text-[10px] md:text-xs font-bold truncate uppercase tracking-wider">
+                <span className="opacity-70 mr-2">[{announcement.subject}]</span>
+                {announcement.message}
+              </p>
+            </div>
+            <button 
+              onClick={() => setIsVisible(false)}
+              className="p-1 hover:bg-white/20 rounded-full transition-colors"
+            >
+              <X size={14} />
+            </button>
           </div>
-          
-          <button 
-            onClick={() => setIsVisible(false)}
-            className="p-1 hover:bg-white/20 rounded-full transition-colors shrink-0"
-          >
-            <X size={18} />
-          </button>
-        </div>
-      </motion.div>
+        </motion.div>
+      )}
     </AnimatePresence>
   )
 }

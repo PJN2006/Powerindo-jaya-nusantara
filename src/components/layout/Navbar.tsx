@@ -1,6 +1,12 @@
+'use client' // Pastikan ada use client karena kita menggunakan style dinamis
+
 export default function Navbar() {
   return (
-    <nav className="sticky top-0 z-50 border-b bg-white/70 backdrop-blur-md">
+    <nav 
+      // Menggunakan style dinamis untuk posisi top
+      style={{ top: 'var(--announcement-height, 0px)' }}
+      className="sticky z-50 border-b bg-white/70 backdrop-blur-md transition-all duration-300"
+    >
       <div className="max-w-7xl mx-auto flex h-16 items-center justify-between px-6">
         {/* Bagian Brand: Logo + Teks */}
         <a href="/" className="flex items-center gap-3 group">
@@ -14,7 +20,7 @@ export default function Navbar() {
           </span>
         </a>
 
-        {/* Navigasi Link - Ditambah Gallery & Contact Us */}
+        {/* Navigasi Link */}
         <div className="hidden md:flex gap-8 text-sm font-medium">
           <a href="/" className="hover:text-brand-primary transition-colors">Home</a>
           <a href="/products" className="hover:text-brand-primary transition-colors">Katalog</a>
