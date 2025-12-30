@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic'
 
 import { supabase } from '@/lib/supabase' 
 import Reveal from '@/components/layout/Reveal'
-import { MessageCircle, Phone, Tag, PackageSearch } from 'lucide-react' 
+import { MessageCircle, Phone, Tag, PackageSearch, Search } from 'lucide-react' 
 import Link from 'next/link'
 
 // Definisikan tipe data
@@ -18,13 +18,14 @@ interface Product {
 
 // PERBAIKAN UTAMA: searchParams sekarang harus di-await (Next.js 15+)
 export default async function ProductsPage(props: {
-  searchParams: Promise<{ category?: string }>
+  searchParams: Promise<{ category?: string; q?: string }>
 }) {
   // Menunggu (await) searchParams sebelum digunakan
   const searchParams = await props.searchParams;
   const selectedCategory = searchParams.category;
+  const searchQuery = searchParams.q;
 
-  // List Kategori sesuai permintaan
+  // List Kategori
   const categories = [
     "Trafo", "Cubicle", "ATS+LVMDP", "Capasitor Bank", 
     "Kabel - Tegangan Menengah", "Kabel - Tegangan Rendah", 
@@ -39,21 +40,43 @@ export default async function ProductsPage(props: {
     query = query.eq('category', selectedCategory);
   }
 
+  // FITUR BARU: Jika ada keyword pencarian, tambahkan filter .ilike (case-insensitive search)
+  if (searchQuery && searchQuery.trim() !== "") {
+    // Mencari di kolom 'name' yang mengandung kata kunci
+    query = query.ilike('name', `%${searchQuery}%`);
+  }
+
   const { data: products } = await query;
 
   return (
     <section className="py-32 px-6 bg-white min-h-screen relative">
       <div className="max-w-7xl mx-auto">
-        <div className="flex flex-col mb-16">
-            <h1 className="text-5xl font-black text-brand-dark italic mb-4 uppercase tracking-tighter">OUR PRODUCTS</h1>
-            <p className="text-slate-500">Menyediakan infrastruktur elektrikal dan digital terbaik untuk kebutuhan industri Anda.</p>
+        <div className="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-8">
+            <div>
+                <h1 className="text-5xl font-black text-brand-dark italic mb-4 uppercase tracking-tighter">OUR PRODUCTS</h1>
+                <p className="text-slate-500 max-w-xl">Menyediakan infrastruktur elektrikal dan digital terbaik untuk kebutuhan industri Anda.</p>
+            </div>
+
+            {/* --- SEARCH BAR --- */}
+            <form action="/products" method="GET" className="relative w-full md:w-96 group">
+                <input 
+                    type="text" 
+                    name="q" 
+                    defaultValue={searchQuery}
+                    placeholder="Cari trafo, kabel, atau genset..." 
+                    className="w-full pl-14 pr-6 py-4 bg-slate-50 border-2 border-slate-100 rounded-full outline-none focus:border-brand-primary focus:bg-white transition-all font-medium text-brand-dark"
+                />
+                <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-brand-primary transition-colors" size={20} />
+                {/* Hidden input agar filter kategori tidak hilang saat search (opsional) */}
+                {selectedCategory && <input type="hidden" name="category" value={selectedCategory} />}
+            </form>
         </div>
 
-        {/* --- FILTER KATEGORI DENGAN HIGHLIGHT BIRU --- */}
+        {/* --- FILTER KATEGORI --- */}
         <div className="flex flex-wrap gap-3 mb-16">
           <Link 
             href="/products"
-            className={`px-8 py-3 rounded-full border-2 text-xs font-bold tracking-widest transition-all duration-300 shadow-sm ${
+            className={`px-8 py-3 rounded-full border-2 text-[10px] font-black tracking-widest transition-all duration-300 shadow-sm ${
               !selectedCategory 
               ? 'bg-brand-primary text-white border-brand-primary shadow-blue-200 shadow-lg' 
               : 'bg-white text-slate-400 border-slate-100 hover:border-brand-primary hover:text-brand-primary'
@@ -65,9 +88,8 @@ export default async function ProductsPage(props: {
           {categories.map((cat) => (
             <Link 
               key={cat}
-              // encodeURIComponent penting untuk kategori dengan spasi atau simbol seperti +
-              href={`/products?category=${encodeURIComponent(cat)}`}
-              className={`px-8 py-3 rounded-full border-2 text-xs font-bold tracking-widest transition-all duration-300 shadow-sm ${
+              href={`/products?category=${encodeURIComponent(cat)}${searchQuery ? `&q=${searchQuery}` : ''}`}
+              className={`px-8 py-3 rounded-full border-2 text-[10px] font-black tracking-widest transition-all duration-300 shadow-sm ${
                 selectedCategory === cat 
                 ? 'bg-brand-primary text-white border-brand-primary shadow-blue-200 shadow-lg' 
                 : 'bg-white text-slate-400 border-slate-100 hover:border-brand-primary hover:text-brand-primary'
@@ -85,7 +107,6 @@ export default async function ProductsPage(props: {
               <Reveal key={item.id}>
                 <div className="group border border-slate-100 rounded-4xl overflow-hidden shadow-sm hover:shadow-2xl transition-all bg-white">
                   <div className="h-72 overflow-hidden relative">
-                    {/* Badge Kategori */}
                     <div className="absolute top-4 left-4 z-10 bg-white/95 backdrop-blur px-4 py-1.5 rounded-full flex items-center gap-2 shadow-sm border border-slate-100">
                         <Tag size={12} className="text-brand-primary" />
                         <span className="text-[10px] font-black text-brand-dark uppercase tracking-wider">{item.category || 'General'}</span>
@@ -99,7 +120,6 @@ export default async function ProductsPage(props: {
                       <span className="text-xl font-black text-brand-primary">
                         Rp {item.price?.toLocaleString('id-ID')}
                       </span>
-                      {/* Ganti tag <button> sebelumnya dengan <Link> ini */}
                       <Link 
                         href={`/products/${item.id}`} 
                         className="text-xs font-bold tracking-widest border-b-2 border-brand-dark hover:text-brand-primary hover:border-brand-primary transition-all"
@@ -115,7 +135,11 @@ export default async function ProductsPage(props: {
         ) : (
           <div className="py-32 flex flex-col items-center justify-center bg-slate-50 rounded-4xl border-2 border-dashed border-slate-200">
             <PackageSearch size={48} className="text-slate-300 mb-4" />
-            <p className="text-slate-400 font-medium italic">Tidak ada produk ditemukan untuk kategori "{selectedCategory}"</p>
+            <p className="text-slate-400 font-medium italic">
+                {searchQuery 
+                    ? `Produk "${searchQuery}" tidak ditemukan` 
+                    : `Tidak ada produk untuk kategori "${selectedCategory}"`}
+            </p>
             <Link href="/products" className="mt-4 text-brand-primary font-bold text-sm hover:underline">Lihat Semua Produk</Link>
           </div>
         )}
