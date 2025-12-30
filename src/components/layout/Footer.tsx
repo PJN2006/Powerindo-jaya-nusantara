@@ -1,5 +1,5 @@
 import { Mail, MapPin, Phone, Linkedin, Instagram, Twitter, Facebook } from 'lucide-react'
-import Link from 'next/link' // Import Link untuk navigasi internal
+import Link from 'next/link'
 
 export default function Footer() {
   // Data Sosial Media
@@ -50,10 +50,12 @@ export default function Footer() {
           <div>
             <h4 className="font-bold mb-8 uppercase tracking-widest text-sm">Navigation</h4>
             <ul className="space-y-4 text-slate-400 text-sm">
-              {/* Perbaikan link navigasi internal menggunakan Link */}
               <li><Link href="/" className="hover:text-brand-primary transition-colors">Home</Link></li>
+              {/* Menambahkan link About yang baru dibuat */}
+              <li><Link href="/about" className="hover:text-brand-primary transition-colors">About Us</Link></li>
               <li><Link href="/products" className="hover:text-brand-primary transition-colors">Katalog</Link></li>
               <li><Link href="/blog" className="hover:text-brand-primary transition-colors">Insight</Link></li>
+              {/* Pastikan folder app/contact/page.tsx sudah ada */}
               <li><Link href="/contact" className="hover:text-brand-primary transition-colors">Contact</Link></li>
             </ul>
           </div>
@@ -90,20 +92,19 @@ export default function Footer() {
               <input 
                 type="email" 
                 placeholder="Your Email" 
-                className="bg-white/5 border border-white/10 px-5 py-3 rounded-full text-sm focus:outline-none focus:border-brand-primary" 
+                className="bg-white/5 border border-white/10 px-5 py-3 rounded-full text-sm focus:outline-none focus:border-brand-primary w-full" 
               />
-              <button className="bg-brand-primary text-white font-bold py-3 rounded-full hover:bg-blue-700 transition-all text-sm">
+              <button className="bg-brand-primary text-white font-bold py-3 rounded-full hover:bg-blue-700 transition-all text-sm w-full">
                 SUBSCRIBE
               </button>
             </div>
           </div>
         </div>
 
-        {/* Bottom Bar - PERBAIKAN DI SINI */}
+        {/* Bottom Bar */}
         <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between gap-6 text-slate-500 text-xs sm:text-sm">
           <p>© 2025 PT Powerindo Jaya Nusantara. All rights reserved.</p>
           <div className="flex gap-8">
-            {/* Mengarahkan ke folder /legal yang sudah dibuat sebelumnya */}
             <Link href="/legal" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/legal" className="hover:text-white transition-colors">Terms of Service</Link>
           </div>
