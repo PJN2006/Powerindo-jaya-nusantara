@@ -14,24 +14,39 @@ export default function AnnouncementBar() {
 
   // Logika untuk mengatur jarak Navbar secara dinamis
   useEffect(() => {
-    if (isVisible && announcement) {
-      document.documentElement.style.setProperty('--announcement-height', '40px');
-    } else {
-      document.documentElement.style.setProperty('--announcement-height', '0px');
-    }
-  }, [isVisible, announcement]);
+    fetchLatestAnnouncement();
+
+    // LOGIKA OTOMATIS: Cek setiap 30 detik apakah pengumuman sudah kadaluwarsa
+    const interval = setInterval(() => {
+        if (announcement?.expires_at) {
+        const now = new Date();
+        const expiry = new Date(announcement.expires_at);
+        
+        if (now > expiry) {
+            setIsVisible(false); // Otomatis sembunyikan jika sudah lewat waktunya
+        }
+        }
+    }, 30000); 
+
+    return () => clearInterval(interval);
+    }, [announcement]);
 
   async function fetchLatestAnnouncement() {
     const now = new Date().toISOString();
-    const { data } = await supabase
+
+    const { data, error } = await supabase
         .from('announcements')
         .select('*')
-        .or(`expires_at.is.null,expires_at.gt.${now}`) 
+        .or(`expires_at.is.null,expires_at.gt."${now}"`) 
         .order('created_at', { ascending: false })
         .limit(1)
         .single()
     
-    if (data) setAnnouncement(data)
+    if (data){
+        setAnnouncement(data);
+    } else {
+        setAnnouncement(null);
+    }
   }
 
   if (!announcement || !isVisible) return null

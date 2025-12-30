@@ -73,26 +73,28 @@ export default function DashboardPage() {
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (selectedEmails.length === 0) return alert("Pilih minimal satu penerima!");
-    
     setIsBroadcasting(true);
+
     try {
+      // LOGIKA OTOMATIS: Mengubah waktu lokal ke format yang dipahami Database
+      const expiryDate = broadcastForm.expires_at 
+        ? new Date(broadcastForm.expires_at).toISOString() 
+        : null;
+
       const { error } = await supabase
         .from('announcements')
         .insert([{ 
           subject: broadcastForm.subject, 
           message: broadcastForm.message,
           target_emails: selectedEmails,
-          // Jika tanggal dikosongkan, maka tidak akan pernah kedaluwarsa
-          expires_at: broadcastForm.expires_at || null 
+          expires_at: expiryDate // Sekarang sudah sinkron dengan waktu dunia
         }]);
 
       if (error) throw error;
-      alert(`Broadcast berhasil dipublish!`);
+      alert("Broadcast Berhasil Dipublish!");
       setBroadcastForm({ subject: '', message: '', expires_at: '' });
-      setSelectedEmails([]);
     } catch (err: any) {
-      alert("Gagal: " + err.message);
+      alert(err.message);
     } finally {
       setIsBroadcasting(false);
     }
