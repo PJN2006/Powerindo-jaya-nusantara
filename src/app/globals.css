@@ -1,9 +1,12 @@
 @import "tailwindcss";
 
 @theme {
-  /* Warna Brand Visitec ala Trafoindo */
-  --color-brand-dark: #0a192f;
-  --color-brand-primary: #1d4ed8;
+  /* --- PALET WARNA BARU (GREEN THEME) --- */
+  /* Menggunakan #10451D untuk warna gelap/teks utama */
+  --color-brand-dark: #10451D; 
+  
+  /* Menggunakan #208B3A untuk warna aksi/tombol/highlight */
+  --color-brand-primary: #208B3A; 
   
   /* Font Jakarta Sans yang sudah kita install */
   --font-jakarta: var(--font-plus-jakarta-sans);
@@ -11,7 +14,8 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0a192f;
+  /* Foreground juga disesuaikan dengan brand-dark agar konsisten */
+  --foreground: #10451D; 
 }
 
 body {
