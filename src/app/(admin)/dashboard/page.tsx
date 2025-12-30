@@ -20,7 +20,6 @@ export default function DashboardPage() {
     "Genset", "Penangkal Petir", "Busduct", "Hydrant", "AC"
   ];
 
-  // --- STATE UNTUK EDIT ---
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
@@ -30,7 +29,7 @@ export default function DashboardPage() {
     price: '', 
     category: '', 
     files: [] as File[],
-    existingImages: [] as string[] // Simpan URL lama saat edit
+    existingImages: [] as string[] 
   });
 
   const [postForm, setPostForm] = useState({ 
@@ -62,14 +61,13 @@ export default function DashboardPage() {
     return supabase.storage.from('visitec-assets').getPublicUrl(filePath).data.publicUrl;
   };
 
-  // --- LOGIKA EDIT ARTIKEL ---
   const handleEditPostClick = (post: any) => {
     setEditingPostId(post.id);
     setPostForm({
       title: post.title,
       content: typeof post.content === 'object' ? post.content.body : post.content,
       files: [],
-      existingImages: post.content?.gallery || [post.image_url]
+      existingImages: post.content?.gallery || (post.image_url ? [post.image_url] : [])
     });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -109,7 +107,6 @@ export default function DashboardPage() {
     finally { setLoading(false); }
   };
 
-  // --- LOGIKA EDIT PRODUK ---
   const handleEditProdClick = (p: any) => {
     setEditingProdId(p.id);
     setProdForm({
@@ -202,7 +199,6 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 1. TAB INSIGHTS */}
       {activeTab === 'insight' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="lg:col-span-2">
@@ -214,28 +210,47 @@ export default function DashboardPage() {
               <form onSubmit={handleAddPost} className="space-y-6">
                 <input type="text" placeholder="Judul Artikel" required className="w-full p-5 bg-slate-50 rounded-2xl outline-none text-xl font-bold" value={postForm.title} onChange={e => setPostForm({...postForm, title: e.target.value})} />
                 <textarea placeholder="Mulai menulis konten di sini..." required className="w-full p-5 bg-slate-50 rounded-2xl outline-none h-80 resize-none" value={postForm.content} onChange={e => setPostForm({...postForm, content: e.target.value})} />
+                
                 <div className="space-y-4">
                   <div className="flex items-center gap-4">
                     <input type="file" id="postImgs" multiple hidden onChange={e => setPostForm({...postForm, files: [...postForm.files, ...Array.from(e.target.files || [])]})} />
                     <label htmlFor="postImgs" className="flex-1 p-4 border-2 border-dashed border-slate-200 rounded-2xl text-center cursor-pointer font-bold text-slate-400">
-                      📸 Tambah Foto Galeri (Opsional jika edit)
+                      📸 {editingPostId ? 'Tambah Foto Baru' : 'Pilih Foto Galeri Artikel'}
                     </label>
                   </div>
+
+                  {/* UI UNTUK GAMBAR LAMA (EXISTING) */}
+                  {postForm.existingImages.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Gambar Saat Ini:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {postForm.existingImages.map((url, idx) => (
+                          <div key={idx} className="relative w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border-2 border-brand-primary/20">
+                            <img src={url} className="w-full h-full object-cover" />
+                            <button type="button" onClick={() => setPostForm({...postForm, existingImages: postForm.existingImages.filter((_, i) => i !== idx)})} className="absolute top-1 right-1 bg-brand-primary text-white rounded-full p-0.5 shadow-md"><X size={12} /></button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* UI UNTUK GAMBAR BARU (PREVIEW) */}
                   <div className="flex flex-wrap gap-2">
                     {postForm.files.map((file, idx) => (
-                      <div key={idx} className="relative w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border">
-                        <img src={URL.createObjectURL(file)} className="w-full h-full object-cover" />
+                      <div key={idx} className="relative w-20 h-20 bg-slate-100 rounded-xl overflow-hidden border border-dashed border-brand-primary">
+                        <img src={URL.createObjectURL(file)} className="w-full h-full object-cover opacity-70" />
                         <button type="button" onClick={() => setPostForm({...postForm, files: postForm.files.filter((_, i) => i !== idx)})} className="absolute top-1 right-1 bg-red-500 text-white rounded-full p-0.5"><X size={12} /></button>
                       </div>
                     ))}
                   </div>
                 </div>
+
                 <div className="flex gap-3">
                     {editingPostId && (
-                        <button type="button" onClick={() => { setEditingPostId(null); setPostForm({title:'', content:'', files:[], existingImages:[]})}} className="flex-1 py-5 bg-slate-100 text-slate-600 font-bold rounded-2xl flex items-center justify-center gap-2"><RotateCcw size={18}/> Batal</button>
+                        <button type="button" onClick={() => { setEditingPostId(null); setPostForm({title:'', content:'', files:[], existingImages:[]})}} className="flex-1 py-5 bg-slate-100 text-slate-600 font-bold rounded-2xl flex items-center justify-center gap-2 hover:bg-slate-200 transition-colors"><RotateCcw size={18}/> Batal</button>
                     )}
-                    <button disabled={loading} className="flex-2 py-5 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer">
-                        {loading ? <Loader2 className="animate-spin" /> : editingPostId ? <Save /> : <Plus />} 
+                    <button disabled={loading} className="flex-2 py-5 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex items-center justify-center gap-2 cursor-pointer hover:bg-brand-primary/90 transition-all">
+                        {loading ? <Loader2 className="animate-spin" /> : editingPostId ? <Save size={20} /> : <Plus />} 
                         {editingPostId ? 'Perbarui Artikel' : 'Publish Artikel'}
                     </button>
                 </div>
@@ -260,7 +275,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 2. TAB PRODUK */}
       {activeTab === 'products' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="lg:col-span-1">
@@ -277,10 +291,23 @@ export default function DashboardPage() {
                 <input type="number" placeholder="Harga" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none" value={prodForm.price} onChange={e => setProdForm({...prodForm, price: e.target.value})} />
                 <textarea placeholder="Deskripsi..." required className="w-full p-4 bg-slate-50 rounded-2xl outline-none h-32" value={prodForm.desc} onChange={e => setProdForm({...prodForm, desc: e.target.value})} />
                 
-                <input type="file" id="prodFile" multiple hidden onChange={e => setProdForm({...prodForm, files: Array.from(e.target.files || [])})} />
-                <label htmlFor="prodFile" className="block p-4 border-2 border-dashed border-slate-200 rounded-2xl text-center cursor-pointer text-slate-400 font-bold">
-                   {prodForm.files.length > 0 ? `${prodForm.files.length} Foto Baru Terpilih` : editingProdId ? "+ Ganti/Tambah Foto" : "+ Upload Gambar (Maks 5)"}
-                </label>
+                <div className="space-y-4">
+                  <input type="file" id="prodFile" multiple hidden onChange={e => setProdForm({...prodForm, files: Array.from(e.target.files || [])})} />
+                  <label htmlFor="prodFile" className="block p-4 border-2 border-dashed border-slate-200 rounded-2xl text-center cursor-pointer text-slate-400 font-bold">
+                    {prodForm.files.length > 0 ? `${prodForm.files.length} Foto Baru Terpilih` : editingProdId ? "+ Ganti/Tambah Foto" : "+ Upload Gambar (Maks 5)"}
+                  </label>
+
+                  {editingProdId && prodForm.existingImages.length > 0 && (
+                    <div className="flex flex-wrap gap-2">
+                      {prodForm.existingImages.map((url, idx) => (
+                        <div key={idx} className="relative w-14 h-14 rounded-lg overflow-hidden border">
+                          <img src={url} className="w-full h-full object-cover" />
+                          <button type="button" onClick={() => setProdForm({...prodForm, existingImages: prodForm.existingImages.filter((_, i) => i !== idx)})} className="absolute top-0 right-0 bg-brand-primary text-white p-0.5"><X size={10} /></button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
 
                 <div className="flex flex-col gap-2">
                     <button disabled={loading} className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex justify-center items-center gap-2 cursor-pointer">
@@ -316,7 +343,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* 3. TAB GALLERY */}
       {activeTab === 'gallery' && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
           <div className="lg:col-span-1">
