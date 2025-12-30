@@ -6,25 +6,25 @@ import { ArrowRight } from 'lucide-react'
 const slides = [
   {
     // Visual: Gardu Induk / Trafo Besar
-    image: 'https://images.unsplash.com/photo-1594595240905-04ae0d99f73b?auto=format&fit=crop&q=80&w=1920',
+    image: 'https://images.unsplash.com/photo-1509390144018-eeaf65052242?q=80&w=1974&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?auto=format&fit=crop&q=80&w=1920',
     title: 'ELECTRICAL CONTRACTOR',
     desc: 'Ahli dalam instalasi, pemeliharaan, dan integrasi sistem mekanikal elektrikal skala industri yang kompleks.'
   },
   {
     // Visual: Detail Komponen Listrik/Trafo
-    image: 'https://images.unsplash.com/photo-1580737338041-628c113e7661?auto=format&fit=crop&q=80&w=1920',
+    image: 'https://images.unsplash.com/photo-1635335874521-7987db781153?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?auto=format&fit=crop&q=80&w=1920',
     title: 'PREMIUM SUPPLIER',
     desc: 'Penyedia komponen elektrikal dan infrastruktur energi berkualitas tinggi untuk menjamin keandalan bisnis Anda.'
   },
   {
     // Visual: Jaringan Distribusi
-    image: 'https://images.unsplash.com/photo-1487803868669-411d48552474?auto=format&fit=crop&q=80&w=1920',
+    image: 'https://images.unsplash.com/photo-1473341304170-971dccb5ac1e?q=80&w=1170&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?auto=format&fit=crop&q=80&w=1920',
     title: 'OFFICIAL DISTRIBUTOR',
     desc: 'Distributor resmi perangkat teknologi otomasi dan sistem kelistrikan yang memastikan rantai pasok proyek tanpa hambatan.'
   },
   {
     // Visual: Fasilitas Industri Modern
-    image: 'https://images.unsplash.com/photo-1563968351004-f92d55fc4499?auto=format&fit=crop&q=80&w=1920',
+    image: 'https://images.unsplash.com/photo-1566417110090-6b15a06ec800?q=80&w=1074&auto=format&fit=crop&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D?auto=format&fit=crop&q=80&w=1920',
     title: 'INTEGRATED SOLUTIONS',
     desc: 'Mitra strategis dalam menghadirkan solusi infrastruktur energi terpadu untuk efisiensi dan masa depan industri.'
   }
