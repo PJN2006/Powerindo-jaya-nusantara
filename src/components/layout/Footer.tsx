@@ -48,14 +48,13 @@ export default function Footer() {
   ];
 
   return (
-    <footer className="bg-brand-dark text-white pt-24 pb-12">
+    // Padding top dikurangi menjadi pt-12 karena sudah ada CTA section di atasnya
+    <footer className="bg-brand-dark text-white pt-12 pb-12 border-t border-white/5">
       <div className="max-w-7xl mx-auto px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-12 mb-20">
           
-          {/* Kolom 1: Brand */}
           <div className="space-y-6">
             <h2 className="text-3xl font-black tracking-tighter italic">
-              {/* JAYA NUSANTARA diubah ke warna #2DC653 agar sangat cerah di bg gelap */}
               POWERINDO<span className="text-[#2DC653]">JAYA NUSANTARA</span>
             </h2>
             <p className="text-slate-400 leading-relaxed text-sm">
@@ -76,7 +75,6 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Kolom 2: Navigation */}
           <div>
             <h4 className="font-bold mb-8 uppercase tracking-widest text-sm">Navigation</h4>
             <ul className="space-y-4 text-slate-400 text-sm">
@@ -88,7 +86,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Kolom 3: Contact Info */}
           <div>
             <h4 className="font-bold mb-8 uppercase tracking-widest text-sm">Contact Us</h4>
             <ul className="space-y-6 text-slate-400 text-sm">
@@ -112,7 +109,6 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Kolom 4: Newsletter */}
           <div>
             <h4 className="font-bold mb-8 uppercase tracking-widest text-sm">Stay Updated</h4>
             <p className="text-slate-400 mb-6 text-sm">Subscribe to our monthly corporate insights.</p>
@@ -142,7 +138,6 @@ export default function Footer() {
           </div>
         </div>
 
-        {/* Bottom Bar */}
         <div className="pt-12 border-t border-white/5 flex flex-col md:flex-row justify-between gap-6 text-slate-500 text-xs sm:text-sm">
           <p>© 2025 PT Powerindo Jaya Nusantara. All rights reserved.</p>
           <div className="flex gap-8">

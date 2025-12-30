@@ -2,13 +2,26 @@
 export const dynamic = 'force-dynamic'
 
 import { supabase } from '@/lib/supabase' 
-// PERBAIKAN IMPORT: Pastikan HeroSlider mengarah ke file yang benar, bukan file Reveal
 import HeroSlider from '@/components/layout/HeroSlider' 
 import Reveal from '@/components/layout/Reveal'
-import { MessageCircle, Phone } from 'lucide-react' 
+import { MessageCircle, Phone, ArrowRight } from 'lucide-react' 
 import Link from 'next/link'
-// FITUR BARU: Import Announcement Bar
 import AnnouncementBar from '@/components/layout/AnnouncementBar'
+
+// Komponen Divider untuk transisi halus
+export function SectionDivider() {
+  return (
+    <div className="relative h-20 w-full bg-slate-50 overflow-hidden">
+      <svg 
+        viewBox="0 0 100 100" 
+        preserveAspectRatio="none" 
+        className="absolute bottom-0 h-full w-full fill-brand-dark"
+      >
+        <polygon points="0,100 100,100 100,0" />
+      </svg>
+    </div>
+  )
+}
 
 export default async function HomePage() {
   // 2. Fetch data Gallery
@@ -20,15 +33,10 @@ export default async function HomePage() {
 
   return (
     <main className="bg-white relative">
-      {/* FITUR BARU: Announcement Bar diletakkan di paling atas */}
       <AnnouncementBar />
-
-      {/* PASTIKAN: Di dalam komponen HeroSlider, tombol "LEARN MORE" 
-          menggunakan tag <a href="#about-section"> agar scroll berfungsi.
-      */}
       <HeroSlider />
 
-      {/* Section About Overview - ID ditambahkan untuk fitur scroll dari Hero */}
+      {/* Section About Overview */}
       <section id="about-section" className="py-32 px-6 scroll-mt-20">
         <div className="max-w-7xl mx-auto">
           <Reveal>
@@ -50,7 +58,6 @@ export default async function HomePage() {
                   Visi Kami: Menjadi perusahaan penyedia solusi peralatan listrik terkemuka yang mengutamakan kualitas produk dan keunggulan teknis di setiap karya.
                 </p>
                 <div className="pt-6">
-                  {/* NAVIGASI: Mengarah ke halaman /about */}
                   <Link 
                     href="/about" 
                     className="text-brand-dark font-bold border-b-2 border-brand-primary pb-2 hover:text-brand-primary transition-all inline-block"
@@ -127,27 +134,28 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* Gallery Section */}
-      <section className="py-32 bg-brand-dark text-white overflow-hidden">
-        <div className="max-w-7xl mx-auto px-6 mb-16">
+      {/* TRANSISI KE GELAP */}
+      <SectionDivider />
+
+      {/* Gallery Section + Watermark */}
+      <section className="pt-20 pb-0 bg-brand-dark text-white overflow-hidden relative">
+        {/* WATERMARK BACKGROUND */}
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none select-none opacity-[0.03]">
+          <h2 className="text-[15vw] font-black italic tracking-tighter uppercase">POWERINDO</h2>
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 mb-16 relative z-10">
           <h2 className="text-sm font-bold text-brand-primary uppercase tracking-[0.4em] mb-4">Gallery</h2>
           <h3 className="text-4xl font-bold italic uppercase tracking-tighter">Our Work In Action</h3>
         </div>
         
-        <div className="flex gap-6 overflow-x-auto px-6 md:px-[calc((100vw-1280px)/2)] scrollbar-hide snap-x snap-mandatory pb-10">
+        <div className="flex gap-6 overflow-x-auto px-6 md:px-[calc((100vw-1280px)/2)] scrollbar-hide snap-x snap-mandatory pb-10 relative z-10">
           {galleryItems && galleryItems.length > 0 ? (
             galleryItems.map((item) => (
-              <div 
-                key={item.id} 
-                className="shrink-0 w-[85vw] md:w-112.5 snap-center"
-              >
+              <div key={item.id} className="shrink-0 w-[85vw] md:w-112.5 snap-center">
                 <Reveal>
                   <div className="group relative aspect-4/3 overflow-hidden rounded-3xl border border-white/10">
-                    <img 
-                      src={item.image_url} 
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" 
-                      alt={item.title || "Powerindo Jaya Nusantara Project"} 
-                    />
+                    <img src={item.image_url} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" alt={item.title || "Project"} />
                     <div className="absolute inset-0 bg-brand-dark/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-6 text-center">
                        <p className="font-bold text-lg uppercase tracking-widest">{item.title}</p>
                     </div>
@@ -159,40 +167,45 @@ export default async function HomePage() {
             <div className="w-full px-6 italic text-slate-500">No gallery items yet.</div>
           )}
         </div>
+      </section>
 
-        <div className="max-w-7xl mx-auto px-6">
-          <p className="text-xs text-slate-500 mt-4 tracking-widest">SCROLL TO EXPLORE →</p>
+      {/* FINAL CTA SECTION (PENGHILANG GAP) */}
+      <section className="bg-brand-dark py-32 px-6 border-t border-white/5">
+        <div className="max-w-5xl mx-auto text-center">
+          <Reveal>
+            <h2 className="text-4xl md:text-7xl font-black text-white italic uppercase tracking-tighter mb-8 leading-none">
+              Ready to Power Up Your <br />
+              <span className="text-[#2DC653]">Digital Infrastructure?</span>
+            </h2>
+            <p className="text-slate-400 text-lg mb-12 max-w-2xl mx-auto">
+              Konsultasikan kebutuhan infrastruktur listrik dan solusi energi perusahaan Anda bersama mitra teknologi terpercaya.
+            </p>
+            <Link 
+              href="/contact" 
+              className="inline-flex items-center gap-4 px-12 py-6 bg-brand-primary text-white font-bold rounded-full shadow-2xl hover:scale-105 transition-all group"
+            >
+              START A PROJECT WITH US <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+            </Link>
+          </Reveal>
         </div>
       </section>
 
-      {/* --- FLOATING WHATSAPP BUTTON --- */}
+      {/* FLOATING WHATSAPP BUTTON */}
       <div className="fixed bottom-8 right-8 z-100 flex flex-col items-end group">
         <div className="flex flex-col gap-3 mb-4 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
-          <a 
-            href="https://wa.me/6281252505111" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm"
-          >
-            <div className="bg-green-500 p-1.5 rounded-lg text-white">
-              <Phone size={14} />
-            </div>
-            Customer Service 1
-          </a>
-          <a 
-            href="https://wa.me/6282245616400" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm"
-          >
-            <div className="bg-green-500 p-1.5 rounded-lg text-white">
-              <Phone size={14} />
-            </div>
-            Customer Service 2
-          </a>
+          {[
+            { name: "Customer Service 1", num: "6281252505111" },
+            { name: "Customer Service 2", num: "6282245616400" }
+          ].map((cs, i) => (
+            <a key={i} href={`https://wa.me/${cs.num}`} target="_blank" rel="noopener noreferrer" className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm">
+              <div className="bg-brand-primary p-1.5 rounded-lg text-white">
+                <Phone size={14} />
+              </div>
+              {cs.name}
+            </a>
+          ))}
         </div>
-
-        <button className="bg-green-500 text-white p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300">
+        <button className="bg-brand-primary text-white p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300">
           <MessageCircle size={32} fill="currentColor" />
         </button>
       </div>
