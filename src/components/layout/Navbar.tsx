@@ -35,6 +35,7 @@ export default function Navbar() {
           <a href="/products" className="hover:text-brand-primary transition-colors">Catalog</a>
           <a href="/blog" className="hover:text-brand-primary transition-colors">Insights</a>
           <a href="/gallery" className="hover:text-brand-primary transition-colors">Gallery</a>
+          <a href="/reviews" className="hover:text-brand-primary transition-colors">Review</a>
           <a href="/contact" className="hover:text-brand-primary transition-colors">Contact Us</a>
         </div>
       </div>

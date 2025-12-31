@@ -4,22 +4,27 @@ import { supabase } from '@/lib/supabase';
 import { 
   Plus, Package, Image as ImageIcon, Loader2, 
   Trash2, LayoutDashboard, FileText, Save, X, Tag, Pencil, RotateCcw, 
-  Users, Mail, Check, Send // Menambahkan Check dan Send
+  Users, Mail, Check, Send, Star, MessageSquare, CheckCircle // Ditambahkan: Star, MessageSquare, CheckCircle
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  const [activeTab, setActiveTab] = useState<'insight' | 'products' | 'gallery' | 'subscribers'>('insight');
+  // Tambahan: 'reviews' dimasukkan ke tipe activeTab
+  const [activeTab, setActiveTab] = useState<'insight' | 'products' | 'gallery' | 'subscribers' | 'reviews'>('insight');
   const [loading, setLoading] = useState(false);
   
   const [posts, setPosts] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
   const [subscribers, setSubscribers] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]); // State baru untuk Reviews
   
-  // --- STATE BARU UNTUK BROADCAST ---
+  // --- STATE UNTUK BROADCAST ---
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', message: '', expires_at: '' });
   const [isBroadcasting, setIsBroadcasting] = useState(false);
+
+  // --- STATE BARU UNTUK REPLY REVIEW ---
+  const [replyInput, setReplyInput] = useState<{ [key: string]: string }>({});
 
   const categories = [
     "Trafo", "Cubicle", "ATS+LVMDP", "Capasitor Bank", 
@@ -47,12 +52,35 @@ export default function DashboardPage() {
     const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
     const { data: gallData } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
     const { data: subData } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
+    const { data: revData } = await supabase.from('reviews').select('*').order('created_at', { ascending: false }); // Fetch reviews
     
     if (postsData) setPosts(postsData);
     if (prodData) setProducts(prodData);
     if (gallData) setGallery(gallData);
     if (subData) setSubscribers(subData);
+    if (revData) setReviews(revData);
   }
+
+  // --- LOGIKA REVIEWS ---
+  const handleApproveReview = async (id: string, currentStatus: boolean) => {
+    const { error } = await supabase.from('reviews').update({ is_approved: !currentStatus }).eq('id', id);
+    if (!error) fetchData();
+  };
+
+  const handleReplyReview = async (id: string) => {
+    const { error } = await supabase.from('reviews').update({ reply: replyInput[id] }).eq('id', id);
+    if (!error) {
+      alert('Balasan berhasil disimpan');
+      fetchData();
+    }
+  };
+
+  const handleDeleteReview = async (id: string) => {
+    if (confirm('Hapus review ini?')) {
+      const { error } = await supabase.from('reviews').delete().eq('id', id);
+      if (!error) fetchData();
+    }
+  };
 
   // --- LOGIKA BROADCAST ---
   const toggleSelect = (email: string) => {
@@ -76,7 +104,6 @@ export default function DashboardPage() {
     setIsBroadcasting(true);
 
     try {
-      // LOGIKA OTOMATIS: Mengubah waktu lokal ke format yang dipahami Database
       const expiryDate = broadcastForm.expires_at 
         ? new Date(broadcastForm.expires_at).toISOString() 
         : null;
@@ -87,7 +114,7 @@ export default function DashboardPage() {
           subject: broadcastForm.subject, 
           message: broadcastForm.message,
           target_emails: selectedEmails,
-          expires_at: expiryDate // Sekarang sudah sinkron dengan waktu dunia
+          expires_at: expiryDate 
         }]);
 
       if (error) throw error;
@@ -175,7 +202,7 @@ export default function DashboardPage() {
       }
       const productData = { 
         name: prodForm.name, description: prodForm.desc, price: parseFloat(prodForm.price), 
-        category: prodForm.category, image_url: imageUrls[0], images: imageUrls        
+        category: prodForm.category, image_url: imageUrls[0], images: imageUrls         
       };
       if (editingProdId) {
         await supabase.from('products').update(productData).eq('id', editingProdId);
@@ -218,6 +245,7 @@ export default function DashboardPage() {
             { id: 'products', label: 'Produk', icon: Package },
             { id: 'gallery', label: 'Gallery', icon: ImageIcon },
             { id: 'subscribers', label: 'Leads', icon: Users },
+            { id: 'reviews', label: 'Reviews', icon: MessageSquare }, // Tab Review ditambahkan
           ].map((tab) => (
             <button
               key={tab.id}
@@ -393,11 +421,8 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* --- 4. TAB SUBSCRIBERS DENGAN FITUR BROADCAST --- */}
       {activeTab === 'subscribers' && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
-          
-          {/* BROADCAST FORM */}
           <div className="bg-brand-dark p-10 rounded-4xl shadow-2xl text-white">
             <div className="flex items-center gap-4 mb-8">
               <div className="p-3 bg-brand-primary rounded-2xl">
@@ -408,7 +433,6 @@ export default function DashboardPage() {
                 <p className="text-slate-400 text-xs font-bold uppercase tracking-widest">Kirim pesan ke {selectedEmails.length} orang terpilih</p>
               </div>
             </div>
-
             <form onSubmit={handleSendBroadcast} className="space-y-4">
               <input 
                 type="text" 
@@ -443,8 +467,6 @@ export default function DashboardPage() {
               </button>
             </form>
           </div>
-
-          {/* LIST LEADS */}
           <div className="bg-white p-10 rounded-4xl shadow-xl border border-slate-100">
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
               <div>
@@ -453,28 +475,16 @@ export default function DashboardPage() {
                 </h2>
                 <p className="text-slate-400 font-bold uppercase text-[10px] tracking-widest mt-2">Pilih email untuk mengirim pesan spesifik</p>
               </div>
-              <button 
-                onClick={toggleSelectAll}
-                className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all"
-              >
+              <button onClick={toggleSelectAll} className="px-6 py-3 bg-slate-100 text-slate-600 font-bold rounded-xl text-xs hover:bg-slate-200 transition-all">
                 {selectedEmails.length === subscribers.length && subscribers.length > 0 ? 'Batal Pilih Semua' : 'Pilih Semua'}
               </button>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {subscribers.map((sub) => {
                 const isSelected = selectedEmails.includes(sub.email);
                 return (
-                  <div 
-                    key={sub.id} 
-                    onClick={() => toggleSelect(sub.email)}
-                    className={`p-6 rounded-3xl border-2 transition-all cursor-pointer relative group ${
-                      isSelected ? 'border-brand-primary bg-blue-50/50' : 'border-slate-50 bg-slate-50'
-                    }`}
-                  >
-                    <div className={`absolute top-4 right-4 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${
-                      isSelected ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200'
-                    }`}>
+                  <div key={sub.id} onClick={() => toggleSelect(sub.email)} className={`p-6 rounded-3xl border-2 transition-all cursor-pointer relative group ${isSelected ? 'border-brand-primary bg-blue-50/50' : 'border-slate-50 bg-slate-50'}`}>
+                    <div className={`absolute top-4 right-4 w-6 h-6 rounded-lg border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-brand-primary border-brand-primary text-white' : 'bg-white border-slate-200'}`}>
                       {isSelected && <Check size={14} strokeWidth={4} />}
                     </div>
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center mb-4 shadow-sm border border-slate-100">
@@ -484,24 +494,68 @@ export default function DashboardPage() {
                     <p className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter mt-2">
                       Terdaftar: {new Date(sub.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                     </p>
-                    <button 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if(confirm('Hapus email ini?')) { 
-                          supabase.from('subscribers').delete().eq('id', sub.id).then(() => fetchData()); 
-                        }
-                      }}
-                      className="mt-6 text-red-400 hover:text-red-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity"
-                    >
+                    <button onClick={(e) => { e.stopPropagation(); if(confirm('Hapus email ini?')) { supabase.from('subscribers').delete().eq('id', sub.id).then(() => fetchData()); } }} className="mt-6 text-red-400 hover:text-red-600 font-bold text-[10px] uppercase tracking-widest flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                       <Trash2 size={12} /> Hapus Permanen
                     </button>
                   </div>
                 );
               })}
             </div>
-            {subscribers.length === 0 && (
-              <div className="py-20 text-center text-slate-400 italic">Belum ada leads yang terdaftar.</div>
-            )}
+            {subscribers.length === 0 && <div className="py-20 text-center text-slate-400 italic">Belum ada leads yang terdaftar.</div>}
+          </div>
+        </div>
+      )}
+
+      {/* --- TAB REVIEWS --- */}
+      {activeTab === 'reviews' && (
+        <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
+          <div className="flex justify-between items-center mb-6">
+            <h2 className="text-2xl font-black text-brand-dark uppercase italic tracking-tighter flex items-center gap-3">
+              <MessageSquare className="text-brand-primary" /> Customer Feedback
+            </h2>
+          </div>
+          <div className="grid grid-cols-1 gap-6">
+            {reviews.map((rev) => (
+              <div key={rev.id} className="bg-white p-8 rounded-4xl border border-slate-100 shadow-sm flex flex-col md:flex-row gap-8">
+                <div className="flex-1 space-y-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h4 className="font-bold text-xl text-brand-dark">{rev.name}</h4>
+                      <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{rev.company || 'Personal Client'}</p>
+                    </div>
+                    <div className="flex gap-1 bg-slate-50 p-2 rounded-xl">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} size={16} className={i < rev.rating ? 'fill-yellow-400 text-yellow-400' : 'text-slate-200'} />
+                      ))}
+                    </div>
+                  </div>
+                  <p className="text-slate-600 italic text-lg leading-relaxed">"{rev.comment}"</p>
+                  <div className="pt-4 border-t border-slate-50">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Admin Reply</p>
+                    {rev.reply ? (
+                      <div className="bg-brand-dark/5 p-4 rounded-2xl border-l-4 border-brand-primary">
+                        <p className="text-sm italic text-brand-dark font-medium">{rev.reply}</p>
+                        <button onClick={() => setReplyInput({ ...replyInput, [rev.id]: rev.reply })} className="text-[10px] text-brand-primary font-bold mt-2 uppercase underline">Edit Balasan</button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input type="text" placeholder="Tulis balasan profesional..." className="flex-1 bg-slate-50 p-3 rounded-xl text-sm outline-none focus:ring-2 ring-brand-primary/20" value={replyInput[rev.id] || ''} onChange={(e) => setReplyInput({ ...replyInput, [rev.id]: e.target.value })} />
+                        <button onClick={() => handleReplyReview(rev.id)} className="bg-brand-primary text-white px-4 rounded-xl hover:bg-brand-primary/90 transition-colors"><Send size={16}/></button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="md:w-48 flex flex-col gap-2">
+                  <button onClick={() => handleApproveReview(rev.id, rev.is_approved)} className={`w-full py-3 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${rev.is_approved ? 'bg-green-50 text-green-600 border border-green-100' : 'bg-brand-primary text-white shadow-lg'}`}>
+                    {rev.is_approved ? <CheckCircle size={16}/> : <Plus size={16}/>} {rev.is_approved ? 'Approved' : 'Approve'}
+                  </button>
+                  <button onClick={() => handleDeleteReview(rev.id)} className="w-full py-3 bg-red-50 text-red-500 border border-red-100 rounded-2xl font-bold text-xs uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-red-500 hover:text-white transition-all">
+                    <Trash2 size={16}/> Delete
+                  </button>
+                </div>
+              </div>
+            ))}
+            {reviews.length === 0 && <div className="py-20 text-center text-slate-400 italic">Belum ada review masuk.</div>}
           </div>
         </div>
       )}
