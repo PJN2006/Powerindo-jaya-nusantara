@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { 
   Plus, Package, Image as ImageIcon, Loader2, 
   Trash2, LayoutDashboard, FileText, Save, X, Tag, Pencil, RotateCcw, 
-  Users, Mail, Check, Send, Star, MessageSquare, CheckCircle // Ditambahkan: Star, MessageSquare, CheckCircle
+  Users, Mail, Check, Send, Star, MessageSquare, CheckCircle 
 } from 'lucide-react';
 
 export default function DashboardPage() {
