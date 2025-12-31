@@ -1,14 +1,18 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import Reveal from '@/components/layout/Reveal'
-import { Award, Target, ShieldCheck, Zap, History, CheckCircle2, Briefcase } from 'lucide-react'
+import { Award, Target, ShieldCheck, Zap, History, CheckCircle2, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react'
 
 export default function AboutPage() {
   const [projects, setProjects] = useState<any[]>([])
+  
+  // --- LOGIKA PAGINATION ---
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 20
+  const projectRef = useRef<HTMLDivElement>(null)
 
-  // Mengambil data proyek dari Supabase secara dinamis
   useEffect(() => {
     async function getProjects() {
       const { data } = await supabase
@@ -19,6 +23,17 @@ export default function AboutPage() {
     }
     getProjects()
   }, [])
+
+  // Hitung data yang tampil
+  const totalPages = Math.ceil(projects.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const currentProjects = projects.slice(startIndex, startIndex + itemsPerPage)
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page)
+    // Scroll otomatis ke judul "Project Experience" agar UX lebih nyaman
+    projectRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }
 
   const productList = [
     "Transformator Distribusi", "Panel Cubicle", "Instalasi Arrester MV dan LV",
@@ -106,17 +121,37 @@ export default function AboutPage() {
             ))}
           </div>
 
-          {/* --- BAGIAN BARU: PROJECT EXPERIENCE LIST (DINAMIS) --- */}
+          {/* --- BAGIAN BARU: PROJECT EXPERIENCE LIST DENGAN PAGINATION --- */}
           {projects.length > 0 && (
-            <div className="mt-32">
+            <div className="mt-32" ref={projectRef}>
               <Reveal>
-                <div className="flex items-center gap-4 mb-12">
-                  <div className="p-3 bg-brand-primary/10 rounded-2xl">
-                    <Briefcase className="text-brand-primary" size={32} />
+                <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-brand-primary/10 rounded-2xl">
+                      <Briefcase className="text-brand-primary" size={32} />
+                    </div>
+                    <div>
+                      <h3 className="text-3xl font-bold text-brand-dark uppercase italic tracking-tighter">Project Experience</h3>
+                      <p className="text-slate-500">Menampilkan {startIndex + 1} - {Math.min(startIndex + itemsPerPage, projects.length)} dari {projects.length} proyek.</p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-3xl font-bold text-brand-dark uppercase italic tracking-tighter">Project Experience</h3>
-                    <p className="text-slate-500">Rekam jejak pengerjaan proyek Mechanical & Electrical kami secara nasional.</p>
+
+                  {/* Navigasi Atas (Opsional/Mobile Friendly) */}
+                  <div className="flex items-center gap-2">
+                     <button 
+                        disabled={currentPage === 1}
+                        onClick={() => handlePageChange(currentPage - 1)}
+                        className="p-2 border rounded-xl disabled:opacity-30 hover:bg-slate-50 transition-all"
+                     >
+                        <ChevronLeft size={20} />
+                     </button>
+                     <button 
+                        disabled={currentPage === totalPages}
+                        onClick={() => handlePageChange(currentPage + 1)}
+                        className="p-2 border rounded-xl disabled:opacity-30 hover:bg-slate-50 transition-all"
+                     >
+                        <ChevronRight size={20} />
+                     </button>
                   </div>
                 </div>
               </Reveal>
@@ -134,7 +169,7 @@ export default function AboutPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-50">
-                        {projects.map((proj) => (
+                        {currentProjects.map((proj) => (
                           <tr key={proj.id} className="hover:bg-slate-50/50 transition-colors group">
                             <td className="px-8 py-5 text-brand-primary font-black">#{proj.project_no}</td>
                             <td className="px-8 py-5 font-bold text-brand-dark text-sm leading-snug">{proj.project_name}</td>
@@ -149,10 +184,24 @@ export default function AboutPage() {
                       </tbody>
                     </table>
                   </div>
-                  <div className="bg-slate-50 p-6 text-center">
-                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">
-                      Data di atas adalah bagian dari portofolio resmi PT. Powerindo Jaya Nusantara.
-                    </p>
+
+                  {/* --- KONTROL PAGINATION UTAMA --- */}
+                  <div className="bg-slate-50/50 p-8 border-t border-slate-100 flex flex-col md:flex-row items-center justify-center gap-6">
+                     <div className="flex items-center gap-2">
+                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                           <button
+                              key={page}
+                              onClick={() => handlePageChange(page)}
+                              className={`w-10 h-10 rounded-xl font-bold text-sm transition-all ${
+                                 currentPage === page 
+                                 ? 'bg-brand-primary text-white shadow-lg shadow-brand-primary/30 scale-110' 
+                                 : 'bg-white text-slate-400 border border-slate-200 hover:border-brand-primary hover:text-brand-primary'
+                              }`}
+                           >
+                              {page}
+                           </button>
+                        ))}
+                     </div>
                   </div>
                 </div>
               </Reveal>
