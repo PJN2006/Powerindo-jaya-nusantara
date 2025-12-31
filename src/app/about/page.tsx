@@ -1,7 +1,25 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { supabase } from '@/lib/supabase'
 import Reveal from '@/components/layout/Reveal'
-import { Award, Target, ShieldCheck, Zap, History, CheckCircle2 } from 'lucide-react'
+import { Award, Target, ShieldCheck, Zap, History, CheckCircle2, Briefcase } from 'lucide-react'
 
 export default function AboutPage() {
+  const [projects, setProjects] = useState<any[]>([])
+
+  // Mengambil data proyek dari Supabase secara dinamis
+  useEffect(() => {
+    async function getProjects() {
+      const { data } = await supabase
+        .from('project_experience')
+        .select('*')
+        .order('project_no', { ascending: false })
+      if (data) setProjects(data)
+    }
+    getProjects()
+  }, [])
+
   const productList = [
     "Transformator Distribusi", "Panel Cubicle", "Instalasi Arrester MV dan LV",
     "Soundproofing Diesel/Genset", "Instalasi Penangkal Petir Eksternal", "Panel AMF - ATS",
@@ -87,6 +105,59 @@ export default function AboutPage() {
               </Reveal>
             ))}
           </div>
+
+          {/* --- BAGIAN BARU: PROJECT EXPERIENCE LIST (DINAMIS) --- */}
+          {projects.length > 0 && (
+            <div className="mt-32">
+              <Reveal>
+                <div className="flex items-center gap-4 mb-12">
+                  <div className="p-3 bg-brand-primary/10 rounded-2xl">
+                    <Briefcase className="text-brand-primary" size={32} />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-bold text-brand-dark uppercase italic tracking-tighter">Project Experience</h3>
+                    <p className="text-slate-500">Rekam jejak pengerjaan proyek Mechanical & Electrical kami secara nasional.</p>
+                  </div>
+                </div>
+              </Reveal>
+
+              <Reveal>
+                <div className="bg-white rounded-4xl border border-slate-100 overflow-hidden shadow-2xl">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                      <thead className="bg-brand-dark text-white text-[10px] font-black uppercase tracking-[0.3em]">
+                        <tr>
+                          <th className="px-8 py-6">No</th>
+                          <th className="px-8 py-6">Project Name</th>
+                          <th className="px-8 py-6">Company / Client</th>
+                          <th className="px-8 py-6">Field</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-50">
+                        {projects.map((proj) => (
+                          <tr key={proj.id} className="hover:bg-slate-50/50 transition-colors group">
+                            <td className="px-8 py-5 text-brand-primary font-black">#{proj.project_no}</td>
+                            <td className="px-8 py-5 font-bold text-brand-dark text-sm leading-snug">{proj.project_name}</td>
+                            <td className="px-8 py-5 text-slate-500 text-sm font-medium">{proj.company}</td>
+                            <td className="px-8 py-5">
+                              <span className="px-3 py-1 bg-slate-100 text-[9px] font-black uppercase rounded-full text-slate-400 group-hover:bg-brand-primary/10 group-hover:text-brand-primary transition-colors border border-transparent group-hover:border-brand-primary/20">
+                                {proj.field}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <div className="bg-slate-50 p-6 text-center">
+                    <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest italic">
+                      Data di atas adalah bagian dari portofolio resmi PT. Powerindo Jaya Nusantara.
+                    </p>
+                  </div>
+                </div>
+              </Reveal>
+            </div>
+          )}
         </div>
       </section>
 

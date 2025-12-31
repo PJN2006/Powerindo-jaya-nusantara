@@ -4,26 +4,30 @@ import { supabase } from '@/lib/supabase';
 import { 
   Plus, Package, Image as ImageIcon, Loader2, 
   Trash2, LayoutDashboard, FileText, Save, X, Tag, Pencil, RotateCcw, 
-  Users, Mail, Check, Send, Star, MessageSquare, CheckCircle 
+  Users, Mail, Check, Send, Star, MessageSquare, CheckCircle,
+  Briefcase, FileUp, Hash 
 } from 'lucide-react';
 
 export default function DashboardPage() {
-  // Tambahan: 'reviews' dimasukkan ke tipe activeTab
-  const [activeTab, setActiveTab] = useState<'insight' | 'products' | 'gallery' | 'subscribers' | 'reviews'>('insight');
+  // Update tipe activeTab untuk menyertakan 'projects'
+  const [activeTab, setActiveTab] = useState<'insight' | 'products' | 'gallery' | 'subscribers' | 'reviews' | 'projects'>('insight');
   const [loading, setLoading] = useState(false);
   
   const [posts, setPosts] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
   const [gallery, setGallery] = useState<any[]>([]);
   const [subscribers, setSubscribers] = useState<any[]>([]);
-  const [reviews, setReviews] = useState<any[]>([]); // State baru untuk Reviews
+  const [reviews, setReviews] = useState<any[]>([]);
+
+  // --- STATE BARU UNTUK PROJECTS ---
+  const [projects, setProjects] = useState<any[]>([]);
+  const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
+  const [projectForm, setProjectForm] = useState({ no: '', name: '', company: '', field: 'Elektrikal' });
+  const [csvText, setCsvText] = useState(''); // Untuk Bulk Import
   
-  // --- STATE UNTUK BROADCAST ---
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', message: '', expires_at: '' });
   const [isBroadcasting, setIsBroadcasting] = useState(false);
-
-  // --- STATE BARU UNTUK REPLY REVIEW ---
   const [replyInput, setReplyInput] = useState<{ [key: string]: string }>({});
 
   const categories = [
@@ -52,14 +56,68 @@ export default function DashboardPage() {
     const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
     const { data: gallData } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
     const { data: subData } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
-    const { data: revData } = await supabase.from('reviews').select('*').order('created_at', { ascending: false }); // Fetch reviews
+    const { data: revData } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    // Fetch Project Experience
+    const { data: projData } = await supabase.from('project_experience').select('*').order('project_no', { ascending: false });
     
     if (postsData) setPosts(postsData);
     if (prodData) setProducts(prodData);
     if (gallData) setGallery(gallData);
     if (subData) setSubscribers(subData);
     if (revData) setReviews(revData);
+    if (projData) setProjects(projData);
   }
+
+  // --- LOGIKA PROJECTS (BARU) ---
+  const handleAddProject = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    try {
+      const pData = { 
+        project_no: parseInt(projectForm.no), 
+        project_name: projectForm.name, 
+        company: projectForm.company, 
+        field: projectForm.field 
+      };
+
+      if (editingProjectId) {
+        await supabase.from('project_experience').update(pData).eq('id', editingProjectId);
+        alert('Proyek Berhasil Diperbarui!');
+      } else {
+        await supabase.from('project_experience').insert([pData]);
+        alert('Proyek Berhasil Ditambahkan!');
+      }
+      setProjectForm({ no: '', name: '', company: '', field: 'Elektrikal' });
+      setEditingProjectId(null);
+      fetchData();
+    } catch (err: any) { alert(err.message); }
+    finally { setLoading(false); }
+  };
+
+  const handleBulkImport = async () => {
+    if (!csvText) return alert("Tempelkan data CSV terlebih dahulu!");
+    setLoading(true);
+    try {
+      const rows = csvText.trim().split('\n');
+      const dataToInsert = rows.map(row => {
+        const [no, name, company, field] = row.split(';'); // Menggunakan separator semicolon
+        return {
+          project_no: parseInt(no.trim()),
+          project_name: name.trim(),
+          company: company.trim(),
+          field: field.trim()
+        };
+      });
+
+      const { error } = await supabase.from('project_experience').insert(dataToInsert);
+      if (error) throw error;
+      
+      alert(`Berhasil mengimpor ${dataToInsert.length} proyek!`);
+      setCsvText('');
+      fetchData();
+    } catch (err: any) { alert("Gagal Impor: Pastikan format No;Nama;Client;Bidang \n" + err.message); }
+    finally { setLoading(false); }
+  };
 
   // --- LOGIKA REVIEWS ---
   const handleApproveReview = async (id: string, currentStatus: boolean) => {
@@ -244,8 +302,9 @@ export default function DashboardPage() {
             { id: 'insight', label: 'Insights', icon: LayoutDashboard },
             { id: 'products', label: 'Produk', icon: Package },
             { id: 'gallery', label: 'Gallery', icon: ImageIcon },
+            { id: 'projects', label: 'Projects', icon: Briefcase }, // Tab Project baru
             { id: 'subscribers', label: 'Leads', icon: Users },
-            { id: 'reviews', label: 'Reviews', icon: MessageSquare }, // Tab Review ditambahkan
+            { id: 'reviews', label: 'Reviews', icon: MessageSquare },
           ].map((tab) => (
             <button
               key={tab.id}
@@ -421,6 +480,89 @@ export default function DashboardPage() {
         </div>
       )}
 
+      {/* --- TAB PROJECTS (BARU) --- */}
+      {activeTab === 'projects' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 animate-in fade-in slide-in-from-bottom-4 duration-500">
+          <div className="lg:col-span-1 space-y-8">
+            {/* Form Input Satuan */}
+            <div className="bg-white p-8 rounded-4xl shadow-xl border border-slate-100">
+              <h2 className="text-2xl font-bold mb-8 flex items-center gap-3">
+                <Hash className="text-brand-primary" /> {editingProjectId ? 'Edit Project' : 'Tambah Project'}
+              </h2>
+              <form onSubmit={handleAddProject} className="space-y-4">
+                <input type="number" placeholder="No Urut (Contoh: 143)" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold" value={projectForm.no} onChange={e => setProjectForm({...projectForm, no: e.target.value})} />
+                <input type="text" placeholder="Nama Paket Pekerjaan" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none" value={projectForm.name} onChange={e => setProjectForm({...projectForm, name: e.target.value})} />
+                <input type="text" placeholder="Nama Client/Perusahaan" required className="w-full p-4 bg-slate-50 rounded-2xl outline-none" value={projectForm.company} onChange={e => setProjectForm({...projectForm, company: e.target.value})} />
+                <select className="w-full p-4 bg-slate-50 rounded-2xl outline-none font-bold text-slate-500" value={projectForm.field} onChange={e => setProjectForm({...projectForm, field: e.target.value})}>
+                  <option value="Elektrikal">Elektrikal</option>
+                  <option value="Hydrant">Hydrant</option>
+                  <option value="HVAC">HVAC</option>
+                  <option value="Mekanikal">Mekanikal</option>
+                </select>
+                <button disabled={loading} className="w-full py-4 bg-brand-primary text-white font-bold rounded-2xl shadow-lg flex justify-center items-center gap-2">
+                  {loading ? <Loader2 className="animate-spin" /> : editingProjectId ? <Save size={18}/> : <Plus />} {editingProjectId ? 'Update Project' : 'Simpan Project'}
+                </button>
+                {editingProjectId && (
+                   <button type="button" onClick={() => { setEditingProjectId(null); setProjectForm({no:'', name:'', company:'', field:'Elektrikal'})}} className="w-full py-4 bg-slate-100 text-slate-500 font-bold rounded-2xl"><RotateCcw className="inline mr-2" size={16}/>Batal Edit</button>
+                )}
+              </form>
+            </div>
+
+            {/* Form Bulk Import */}
+            <div className="bg-brand-dark p-8 rounded-4xl shadow-xl text-white">
+               <h3 className="text-xl font-bold mb-4 flex items-center gap-3 italic"><FileUp className="text-brand-primary" /> Bulk Import CSV</h3>
+               <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-4">Format: No;Nama;Client;Bidang (Gunakan Titik Koma)</p>
+               <textarea 
+                  placeholder="143;Pengadaan Kabel;PT. MEGA BINTANG;Elektrikal" 
+                  className="w-full h-32 p-4 bg-white/5 border border-white/10 rounded-2xl outline-none text-xs focus:border-brand-primary transition-all mb-4"
+                  value={csvText}
+                  onChange={e => setCsvText(e.target.value)}
+               />
+               <button onClick={handleBulkImport} disabled={loading} className="w-full py-3 bg-white text-brand-dark font-black rounded-xl text-[10px] uppercase tracking-[0.2em] hover:bg-brand-primary hover:text-white transition-all">
+                  {loading ? 'Processing...' : 'Proses Bulk Import'}
+               </button>
+            </div>
+          </div>
+
+          <div className="lg:col-span-2">
+            <div className="bg-white rounded-3xl border border-slate-100 shadow-sm overflow-hidden">
+               <div className="p-6 border-b border-slate-50 flex justify-between items-center bg-slate-50/50">
+                  <h3 className="font-bold text-brand-dark uppercase text-xs tracking-widest">Master Project List</h3>
+                  <span className="text-[10px] font-black text-brand-primary bg-blue-50 px-3 py-1 rounded-full border border-blue-100">{projects.length} Total Data</span>
+               </div>
+               <div className="max-h-800px overflow-y-auto">
+                  <table className="w-full text-left">
+                    <thead className="bg-slate-100/50 sticky top-0 z-10 text-[9px] font-black uppercase tracking-[0.3em] text-slate-400">
+                      <tr>
+                        <th className="px-6 py-4">No</th>
+                        <th className="px-6 py-4">Pekerjaan & Client</th>
+                        <th className="px-6 py-4 text-center">Aksi</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-50">
+                      {projects.map((p) => (
+                        <tr key={p.id} className="hover:bg-slate-50/50 transition-colors group">
+                          <td className="px-6 py-5 font-black text-brand-primary text-xs">#{p.project_no}</td>
+                          <td className="px-6 py-5">
+                            <p className="font-bold text-brand-dark text-sm leading-snug">{p.project_name}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase mt-1 tracking-tighter">{p.company} • <span className="text-brand-primary/60">{p.field}</span></p>
+                          </td>
+                          <td className="px-6 py-5">
+                             <div className="flex gap-2 justify-center">
+                                <button onClick={() => { setEditingProjectId(p.id); setProjectForm({no: p.project_no.toString(), name: p.project_name, company: p.company, field: p.field}); window.scrollTo(0,0); }} className="p-3 text-blue-500 hover:bg-blue-50 rounded-xl transition-colors"><Pencil size={18}/></button>
+                                <button onClick={async () => { if(confirm('Hapus data proyek ini?')) { await supabase.from('project_experience').delete().eq('id', p.id); fetchData(); } }} className="p-3 text-red-400 hover:bg-red-50 rounded-xl transition-colors"><Trash2 size={18}/></button>
+                             </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {activeTab === 'subscribers' && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-8">
           <div className="bg-brand-dark p-10 rounded-4xl shadow-2xl text-white">
@@ -506,7 +648,6 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* --- TAB REVIEWS --- */}
       {activeTab === 'reviews' && (
         <div className="animate-in fade-in slide-in-from-bottom-4 duration-500 space-y-6">
           <div className="flex justify-between items-center mb-6">
