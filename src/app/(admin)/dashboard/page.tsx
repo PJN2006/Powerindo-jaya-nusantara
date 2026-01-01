@@ -1,16 +1,17 @@
 'use client'
 import { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { useRouter } from 'next/navigation'; // TAMBAHAN
+import { useRouter } from 'next/navigation'; 
 import { 
   Plus, Package, Image as ImageIcon, Loader2, 
   Trash2, LayoutDashboard, FileText, Save, X, Tag, Pencil, RotateCcw, 
   Users, Mail, Check, Send, Star, MessageSquare, CheckCircle,
   Briefcase, FileUp, Hash 
 } from 'lucide-react';
+import LogoutButton from '@/components/LogoutButton'
 
 export default function DashboardPage() {
-  const router = useRouter(); // TAMBAHAN
+  const router = useRouter(); 
   const [activeTab, setActiveTab] = useState<'insight' | 'products' | 'gallery' | 'subscribers' | 'reviews' | 'projects'>('insight');
   const [loading, setLoading] = useState(false);
   
@@ -300,27 +301,39 @@ export default function DashboardPage() {
   return (
     <div className="max-w-7xl mx-auto px-6 py-24 bg-slate-50 min-h-screen">
       <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-6">
-        <div>
-          <h1 className="text-4xl font-black text-brand-dark italic uppercase tracking-tighter">Powerindo Jaya Nusantara Control Center</h1>
-          <p className="text-slate-500 mt-2">Kelola konten, produk, dan performa digital perusahaan.</p>
+        <div className="flex justify-between items-start w-full md:w-auto gap-6">
+          <div>
+            <h1 className="text-4xl font-black text-brand-dark italic uppercase tracking-tighter">Powerindo Jaya Nusantara Control Center</h1>
+            <p className="text-slate-500 mt-2">Kelola konten, produk, dan performa digital perusahaan.</p>
+          </div>
+          {/* Tambahan LogoutButton untuk tampilan Mobile */}
+          <div className="md:hidden">
+            <LogoutButton />
+          </div>
         </div>
-        <div className="flex flex-wrap gap-2 md:gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
-          {[
-            { id: 'insight', label: 'Insights', icon: LayoutDashboard },
-            { id: 'products', label: 'Produk', icon: Package },
-            { id: 'gallery', label: 'Gallery', icon: ImageIcon },
-            { id: 'projects', label: 'Projects', icon: Briefcase }, 
-            { id: 'subscribers', label: 'Leads', icon: Users },
-            { id: 'reviews', label: 'Reviews', icon: MessageSquare },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all text-xs md:text-sm ${activeTab === tab.id ? 'bg-brand-primary text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
-            >
-              <tab.icon size={18} /> {tab.label}
-            </button>
-          ))}
+        <div className="flex flex-col md:flex-row items-end gap-4">
+          {/* Tambahan LogoutButton untuk tampilan Desktop */}
+          <div className="hidden md:block">
+            <LogoutButton />
+          </div>
+          <div className="flex flex-wrap gap-2 md:gap-4 bg-white p-2 rounded-2xl shadow-sm border border-slate-100">
+            {[
+              { id: 'insight', label: 'Insights', icon: LayoutDashboard },
+              { id: 'products', label: 'Produk', icon: Package },
+              { id: 'gallery', label: 'Gallery', icon: ImageIcon },
+              { id: 'projects', label: 'Projects', icon: Briefcase }, 
+              { id: 'subscribers', label: 'Leads', icon: Users },
+              { id: 'reviews', label: 'Reviews', icon: MessageSquare },
+            ].map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl font-bold transition-all text-xs md:text-sm ${activeTab === tab.id ? 'bg-brand-primary text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
+              >
+                <tab.icon size={18} /> {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
