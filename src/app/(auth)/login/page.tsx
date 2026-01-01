@@ -25,7 +25,7 @@ export default function LoginPage() {
     } else {
       // JANGAN GUNAKAN router.push() jika middleware masih menendang.
       // window.location.href adalah solusi paling ampuh untuk sinkronisasi cookie.
-      window.location.href = '/dashboard'; 
+      window.location.replace('/dashboard');
     }
   };
 
