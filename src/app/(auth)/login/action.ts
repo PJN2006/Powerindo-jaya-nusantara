@@ -28,6 +28,7 @@ export async function logoutAction() {
   // Membersihkan cache dashboard agar tidak bisa diakses via tombol 'back' browser
   revalidatePath('/dashboard', 'layout')
   revalidatePath('/admin', 'layout')
+  revalidatePath('/', 'layout')
   
   // Lempar kembali ke halaman login
   redirect('/login')

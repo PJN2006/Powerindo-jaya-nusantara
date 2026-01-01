@@ -52,31 +52,43 @@ export default function DashboardPage() {
 
   // --- UPDATE PADA USE EFFECT ---
   useEffect(() => { 
-    const checkAuth = async () => {
+    const checkAuthAndFetch = async () => {
+      // 1. Ambil session terbaru dulu
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
-        router.push('/login'); // Tendang jika tidak ada session
+        router.push('/login'); 
       } else {
-        fetchData();
+        // 2. Jika sesi sudah pasti ada, baru panggil data
+        // Ini memastikan token sudah terpasang di header request Supabase
+        await fetchData();
       }
     };
-    checkAuth();
+    
+    checkAuthAndFetch();
   }, [router]);
 
   async function fetchData() {
-    const { data: postsData } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-    const { data: gallData } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
-    const { data: subData } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
-    const { data: revData } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
-    const { data: projData } = await supabase.from('project_experience').select('*').order('project_no', { ascending: false });
+    setLoading(true); // Opsional: nyalakan loading
+    const { data: postsData, error: postsErr } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    const { data: prodData, error: prodErr } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    const { data: gallData, error: gallErr } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+    const { data: subData, error: subErr } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
+    const { data: revData, error: revErr } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    const { data: projData, error: projErr } = await supabase.from('project_experience').select('*').order('project_no', { ascending: false });
+    
+    // DEBUG: Cek di console browser (F12) apakah data masuk atau ada error
+    console.log("Data Posts:", postsData, "Error:", postsErr);
+    console.log("Data Products:", prodData, "Error:", prodErr);
+
+    if (postsData) setPosts(postsData);
+    if (prodData) setProducts(prodData);
+    if (gallData) setGallery(gallData);
+    if (subData) setSubscribers(subData);
+    if (revData) setReviews(revData);
+    if (projData) setProjects(projData);
     
-    if (postsData) setPosts(postsData);
-    if (prodData) setProducts(prodData);
-    if (gallData) setGallery(gallData);
-    if (subData) setSubscribers(subData);
-    if (revData) setReviews(revData);
-    if (projData) setProjects(projData);
+    setLoading(false);
   }
 
   const handleAddProject = async (e: React.FormEvent) => {
