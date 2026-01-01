@@ -1,4 +1,4 @@
-import { createServerClient } from '@supabase/ssr'
+import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
 export async function middleware(request: NextRequest) {
@@ -6,39 +6,42 @@ export async function middleware(request: NextRequest) {
     request: { headers: request.headers },
   })
 
+  // MENGGUNAKAN LOGIKA COOKIE DARI CODE LAMA ANDA (STABLE)
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       cookies: {
-        // Versi paling simpel untuk membaca cookie saja
-        getAll() {
-          return request.cookies.getAll()
+        get(name: string) { return request.cookies.get(name)?.value },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value, ...options })
         },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value))
-          response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
-          )
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options })
+          response = NextResponse.next({ request: { headers: request.headers } })
+          response.cookies.set({ name, value: '', ...options })
         },
       },
     }
   )
 
-  // Cek user secara server-side
   const { data: { user } } = await supabase.auth.getUser()
-
   const path = request.nextUrl.pathname;
 
-  // 1. Jika BELUM login & mencoba akses folder admin/dashboard, paksa ke /login
-  if (!user && (path.startsWith('/admin') || path.startsWith('/dashboard'))) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  // --- LOGIKA PROTEKSI (DARI CODE BARU) ---
 
-  // 2. Jika SUDAH login & mencoba buka /login, lempar ke dashboard
+  // 1. Jika SUDAH login & buka halaman /login, lempar ke dashboard
   if (user && path === '/login') {
     return NextResponse.redirect(new URL('/admin/dashboard', request.url))
+  }
+
+  // 2. Jika BELUM login & mencoba akses folder /admin atau /dashboard, paksa ke /login
+  // Ini mencegah orang luar melihat dashboard Powerindo Jaya Nusantara
+  const isProtectedPath = path.startsWith('/admin') || path.startsWith('/dashboard');
+  if (!user && isProtectedPath) {
+    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return response
