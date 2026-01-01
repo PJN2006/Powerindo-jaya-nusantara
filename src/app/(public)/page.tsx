@@ -52,7 +52,7 @@ export default async function HomePage() {
               </div>
               <div className="space-y-6">
                 <p className="text-xl text-slate-600 leading-relaxed">
-                  Kami bukan sekadar penyedia layanan teknologi. Powerindo Jaya Nusantara adalah mitra strategis yang membantu perusahaan besar mengintegrasikan solusi digital paling mutakhir.
+                  Kami mendedikasikan diri untuk memberikan solusi teknik terbaik bagi sektor industri di Indonesia.
                 </p>
                 <p className="text-slate-600">
                   Visi Kami: Menjadi perusahaan penyedia solusi peralatan listrik terkemuka yang mengutamakan kualitas produk dan keunggulan teknis di setiap karya.
