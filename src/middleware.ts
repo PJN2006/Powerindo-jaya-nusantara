@@ -1,8 +1,8 @@
 import { createServerClient, type CookieOptions } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 
-// NAMA HARUS 'proxy' agar terbaca oleh Next.js
-export async function proxy(request: NextRequest) {
+// NAMA HARUS 'middleware' agar terbaca oleh Next.js
+export async function middleware(request: NextRequest) {
   let response = NextResponse.next({
     request: { headers: request.headers },
   })
