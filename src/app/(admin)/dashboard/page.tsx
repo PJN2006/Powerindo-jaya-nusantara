@@ -50,43 +50,50 @@ export default function DashboardPage() {
 
   const [gallForm, setGallForm] = useState({ title: '', file: null as File | null });
 
-  // --- UPDATE PADA USE EFFECT ---
+  // --- FIX PADA USE EFFECT (SINKRONISASI SESI) ---
   useEffect(() => { 
     const checkAuthAndFetch = async () => {
-      // 1. Ambil session terbaru dulu
+      // Pastikan token auth terpasang di client sebelum fetch data
+      const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+        if (event === 'SIGNED_IN' || event === 'INITIAL_SESSION') {
+          fetchData();
+        }
+        if (event === 'SIGNED_OUT') {
+          router.push('/login');
+        }
+      });
+
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
         router.push('/login'); 
       } else {
-        // 2. Jika sesi sudah pasti ada, baru panggil data
-        // Ini memastikan token sudah terpasang di header request Supabase
         await fetchData();
       }
+
+      return () => subscription.unsubscribe();
     };
     
     checkAuthAndFetch();
   }, [router]);
 
   async function fetchData() {
-    setLoading(true); // Opsional: nyalakan loading
-    const { data: postsData, error: postsErr } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    const { data: prodData, error: prodErr } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-    const { data: gallData, error: gallErr } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
-    const { data: subData, error: subErr } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
-    const { data: revData, error: revErr } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
-    const { data: projData, error: projErr } = await supabase.from('project_experience').select('*').order('project_no', { ascending: false });
-    
-    // DEBUG: Cek di console browser (F12) apakah data masuk atau ada error
+    setLoading(true); 
+    const { data: postsData, error: postsErr } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
+    const { data: prodData, error: prodErr } = await supabase.from('products').select('*').order('created_at', { ascending: false });
+    const { data: gallData, error: gallErr } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
+    const { data: subData, error: subErr } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
+    const { data: revData, error: revErr } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
+    const { data: projData, error: projErr } = await supabase.from('project_experience').select('*').order('project_no', { ascending: false });
+    
     console.log("Data Posts:", postsData, "Error:", postsErr);
-    console.log("Data Products:", prodData, "Error:", prodErr);
 
-    if (postsData) setPosts(postsData);
-    if (prodData) setProducts(prodData);
-    if (gallData) setGallery(gallData);
-    if (subData) setSubscribers(subData);
-    if (revData) setReviews(revData);
-    if (projData) setProjects(projData);
+    if (postsData) setPosts(postsData);
+    if (prodData) setProducts(prodData);
+    if (gallData) setGallery(gallData);
+    if (subData) setSubscribers(subData);
+    if (revData) setReviews(revData);
+    if (projData) setProjects(projData);
     
     setLoading(false);
   }
@@ -280,7 +287,7 @@ export default function DashboardPage() {
       }
       const productData = { 
         name: prodForm.name, description: prodForm.desc, price: parseFloat(prodForm.price), 
-        category: prodForm.category, image_url: imageUrls[0], images: imageUrls         
+        category: prodForm.category, image_url: imageUrls[0], images: imageUrls          
       };
       if (editingProdId) {
         await supabase.from('products').update(productData).eq('id', editingProdId);
@@ -318,13 +325,11 @@ export default function DashboardPage() {
             <h1 className="text-4xl font-black text-brand-dark italic uppercase tracking-tighter">Powerindo Jaya Nusantara Control Center</h1>
             <p className="text-slate-500 mt-2">Kelola konten, produk, dan performa digital perusahaan.</p>
           </div>
-          {/* Tambahan LogoutButton untuk tampilan Mobile */}
           <div className="md:hidden">
             <LogoutButton />
           </div>
         </div>
         <div className="flex flex-col md:flex-row items-end gap-4">
-          {/* Tambahan LogoutButton untuk tampilan Desktop */}
           <div className="hidden md:block">
             <LogoutButton />
           </div>
