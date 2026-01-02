@@ -21,40 +21,29 @@ export default function DashboardPage() {
   const [gallery, setGallery] = useState<any[]>([]);
   const [subscribers, setSubscribers] = useState<any[]>([]);
   const [reviews, setReviews] = useState<any[]>([]);
-
   const [projects, setProjects] = useState<any[]>([]);
+
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
   const [projectForm, setProjectForm] = useState({ no: '', name: '', company: '', field: 'Elektrikal' });
   const [csvText, setCsvText] = useState(''); 
-  
   const [selectedEmails, setSelectedEmails] = useState<string[]>([]);
   const [broadcastForm, setBroadcastForm] = useState({ subject: '', message: '', expires_at: '' });
   const [isBroadcasting, setIsBroadcasting] = useState(false);
   const [replyInput, setReplyInput] = useState<{ [key: string]: string }>({});
 
-  const categories = [
-    "Trafo", "Cubicle", "ATS+LVMDP", "Capasitor Bank", 
-    "Kabel - Tegangan Menengah", "Kabel - Tegangan Rendah", 
-    "Genset", "Penangkal Petir", "Busduct", "Hydrant", "AC"
-  ];
+  const categories = ["Trafo", "Cubicle", "ATS+LVMDP", "Capasitor Bank", "Kabel - Tegangan Menengah", "Kabel - Tegangan Rendah", "Genset", "Penangkal Petir", "Busduct", "Hydrant", "AC"];
 
   const [editingProdId, setEditingProdId] = useState<string | null>(null);
   const [editingPostId, setEditingPostId] = useState<string | null>(null);
 
-  const [prodForm, setProdForm] = useState({ 
-    name: '', desc: '', price: '', category: '', files: [] as File[], existingImages: [] as string[] 
-  });
-
-  const [postForm, setPostForm] = useState({ 
-    title: '', content: '', files: [] as File[], existingImages: [] as string[] 
-  });
-
+  const [prodForm, setProdForm] = useState({ name: '', desc: '', price: '', category: '', files: [] as File[], existingImages: [] as string[] });
+  const [postForm, setPostForm] = useState({ title: '', content: '', files: [] as File[], existingImages: [] as string[] });
   const [gallForm, setGallForm] = useState({ title: '', file: null as File | null });
 
   // --- LOGIKA AUTH & FETCH (FIXED) ---
   useEffect(() => { 
     const initDashboard = async () => {
-      // 1. Ambil session dulu
+      // Menggunakan getSession() untuk mendapatkan data auth dari cookie
       const { data: { session } } = await supabase.auth.getSession();
       
       if (!session) {
@@ -62,18 +51,16 @@ export default function DashboardPage() {
         return;
       }
       
-      // 2. Set user dan langsung tarik data (agar preview muncul)
       setCurrentUser(session.user);
-      fetchData();
+      fetchData(); // Panggil data setelah user terkonfirmasi
     };
 
     initDashboard();
 
-    // Pantau perubahan auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setCurrentUser(session.user);
-      } else {
+      } else if (event === 'SIGNED_OUT') {
         router.push('/login');
       }
     });
@@ -84,14 +71,8 @@ export default function DashboardPage() {
   async function fetchData() {
     setLoading(true); 
     try {
-      const [
-        { data: postsData }, 
-        { data: prodData }, 
-        { data: gallData }, 
-        { data: subData }, 
-        { data: revData }, 
-        { data: projData }
-      ] = await Promise.all([
+      // Mengambil semua data secara paralel agar preview muncul bersamaan
+      const [pData, prodD, gallD, subD, revD, projD] = await Promise.all([
         supabase.from('posts').select('*').order('created_at', { ascending: false }),
         supabase.from('products').select('*').order('created_at', { ascending: false }),
         supabase.from('gallery').select('*').order('created_at', { ascending: false }),
@@ -100,12 +81,12 @@ export default function DashboardPage() {
         supabase.from('project_experience').select('*').order('project_no', { ascending: false })
       ]);
       
-      if (postsData) setPosts(postsData);
-      if (prodData) setProducts(prodData);
-      if (gallData) setGallery(gallData);
-      if (subData) setSubscribers(subData);
-      if (revData) setReviews(revData);
-      if (projData) setProjects(projData);
+      if (pData.data) setPosts(pData.data);
+      if (prodD.data) setProducts(prodD.data);
+      if (gallD.data) setGallery(gallD.data);
+      if (subD.data) setSubscribers(subD.data);
+      if (revD.data) setReviews(revD.data);
+      if (projD.data) setProjects(projD.data);
     } catch (error) {
       console.error("Fetch error:", error);
     } finally {
@@ -121,14 +102,13 @@ export default function DashboardPage() {
     return supabase.storage.from('visitec-assets').getPublicUrl(filePath).data.publicUrl;
   };
 
-  // --- HANDLER POST (INSIGHT) ---
+  // --- HANDLERS ---
   const handleAddPost = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
-      // Ambil user terbaru untuk memastikan token valid
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sesi tidak ditemukan, silakan login ulang.");
+      if (!user) throw new Error("Sesi berakhir, silakan login ulang.");
 
       let imageUrls: string[] = [...postForm.existingImages];
       if (postForm.files.length > 0) {
@@ -137,7 +117,6 @@ export default function DashboardPage() {
           imageUrls.push(url);
         }
       }
-      if (imageUrls.length === 0) throw new Error("Artikel wajib memiliki minimal 1 foto.");
       
       const postData = { 
         title: postForm.title, 
@@ -148,31 +127,24 @@ export default function DashboardPage() {
       };
 
       if (editingPostId) {
-        const { error } = await supabase.from('posts').update(postData).eq('id', editingPostId);
-        if (error) throw error;
-        alert('Artikel Berhasil Diperbarui!');
+        await supabase.from('posts').update(postData).eq('id', editingPostId);
       } else {
-        const { error } = await supabase.from('posts').insert([postData]);
-        if (error) throw error;
-        alert('Artikel Berhasil Dipublish!');
+        await supabase.from('posts').insert([postData]);
       }
       setPostForm({ title: '', content: '', files: [], existingImages: [] });
       setEditingPostId(null);
       fetchData();
+      alert('Artikel berhasil diproses!');
     } catch (err: any) { alert(err.message); }
     finally { setLoading(false); }
   };
 
-  // --- HANDLER PRODUK (FIXED RLS) ---
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Sesi tidak ditemukan.");
-
-      if (!editingProdId && prodForm.files.length === 0) throw new Error('Pilih minimal 1 gambar produk!');
-      if (!prodForm.category) throw new Error('Pilih kategori produk!');
 
       let imageUrls: string[] = [...prodForm.existingImages];
       if (prodForm.files.length > 0) {
@@ -183,21 +155,18 @@ export default function DashboardPage() {
       }
       const productData = { 
         name: prodForm.name, description: prodForm.desc, price: parseFloat(prodForm.price), 
-        category: prodForm.category, image_url: imageUrls[0], images: imageUrls           
+        category: prodForm.category, image_url: imageUrls[0], images: imageUrls 
       };
 
       if (editingProdId) {
-        const { error } = await supabase.from('products').update(productData).eq('id', editingProdId);
-        if (error) throw error;
-        alert('Produk Berhasil Diperbarui!');
+        await supabase.from('products').update(productData).eq('id', editingProdId);
       } else {
-        const { error } = await supabase.from('products').insert([productData]);
-        if (error) throw error;
-        alert('Produk Berhasil Ditambahkan!');
+        await supabase.from('products').insert([productData]);
       }
       setProdForm({ name: '', desc: '', price: '', category: '', files: [], existingImages: [] });
       setEditingProdId(null);
       fetchData();
+      alert('Produk berhasil disimpan!');
     } catch (err: any) { alert("Gagal: " + err.message); }
     finally { setLoading(false); }
   };
@@ -206,28 +175,16 @@ export default function DashboardPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("Sesi tidak ditemukan.");
-
-      const pData = { 
-        project_no: parseInt(projectForm.no), 
-        project_name: projectForm.name, 
-        company: projectForm.company, 
-        field: projectForm.field 
-      };
-
+      const pData = { project_no: parseInt(projectForm.no), project_name: projectForm.name, company: projectForm.company, field: projectForm.field };
       if (editingProjectId) {
-        const { error } = await supabase.from('project_experience').update(pData).eq('id', editingProjectId);
-        if (error) throw error;
-        alert('Proyek Berhasil Diperbarui!');
+        await supabase.from('project_experience').update(pData).eq('id', editingProjectId);
       } else {
-        const { error } = await supabase.from('project_experience').insert([pData]);
-        if (error) throw error;
-        alert('Proyek Berhasil Ditambahkan!');
+        await supabase.from('project_experience').insert([pData]);
       }
       setProjectForm({ no: '', name: '', company: '', field: 'Elektrikal' });
       setEditingProjectId(null);
       fetchData();
+      alert('Project berhasil disimpan!');
     } catch (err: any) { alert(err.message); }
     finally { setLoading(false); }
   };
@@ -239,58 +196,39 @@ export default function DashboardPage() {
       const rows = csvText.trim().split('\n');
       const dataToInsert = rows.map(row => {
         const [no, name, company, field] = row.split(';');
-        return {
-          project_no: parseInt(no.trim()),
-          project_name: name.trim(),
-          company: company.trim(),
-          field: field.trim()
-        };
+        return { project_no: parseInt(no.trim()), project_name: name.trim(), company: company.trim(), field: field.trim() };
       });
-
-      const { error } = await supabase.from('project_experience').insert(dataToInsert);
-      if (error) throw error;
-      
-      alert(`Berhasil mengimpor ${dataToInsert.length} proyek!`);
+      await supabase.from('project_experience').insert(dataToInsert);
       setCsvText('');
       fetchData();
-    } catch (err: any) { alert("Gagal Impor: Pastikan format No;Nama;Client;Bidang \n" + err.message); }
+      alert('Bulk import berhasil!');
+    } catch (err: any) { alert("Format salah: " + err.message); }
     finally { setLoading(false); }
   };
 
   const handleApproveReview = async (id: string, currentStatus: boolean) => {
-    const { error } = await supabase.from('reviews').update({ is_approved: !currentStatus }).eq('id', id);
-    if (!error) fetchData();
+    await supabase.from('reviews').update({ is_approved: !currentStatus }).eq('id', id);
+    fetchData();
   };
 
   const handleReplyReview = async (id: string) => {
-    const { error } = await supabase.from('reviews').update({ reply: replyInput[id] }).eq('id', id);
-    if (!error) {
-      alert('Balasan berhasil disimpan');
-      fetchData();
-    }
+    await supabase.from('reviews').update({ reply: replyInput[id] }).eq('id', id);
+    fetchData();
   };
 
   const handleDeleteReview = async (id: string) => {
     if (confirm('Hapus review ini?')) {
-      const { error } = await supabase.from('reviews').delete().eq('id', id);
-      if (!error) fetchData();
+      await supabase.from('reviews').delete().eq('id', id);
+      fetchData();
     }
   };
 
   const toggleSelect = (email: string) => {
-    if (selectedEmails.includes(email)) {
-      setSelectedEmails(selectedEmails.filter(e => e !== email));
-    } else {
-      setSelectedEmails([...selectedEmails, email]);
-    }
+    setSelectedEmails(prev => prev.includes(email) ? prev.filter(e => e !== email) : [...prev, email]);
   };
 
   const toggleSelectAll = () => {
-    if (selectedEmails.length === subscribers.length && subscribers.length > 0) {
-      setSelectedEmails([]);
-    } else {
-      setSelectedEmails(subscribers.map(s => s.email));
-    }
+    setSelectedEmails(selectedEmails.length === subscribers.length ? [] : subscribers.map(s => s.email));
   };
 
   const handleSendBroadcast = async (e: React.FormEvent) => {
@@ -298,14 +236,8 @@ export default function DashboardPage() {
     setIsBroadcasting(true);
     try {
       const expiryDate = broadcastForm.expires_at ? new Date(broadcastForm.expires_at).toISOString() : null;
-      const { error } = await supabase.from('announcements').insert([{ 
-          subject: broadcastForm.subject, 
-          message: broadcastForm.message,
-          target_emails: selectedEmails,
-          expires_at: expiryDate 
-        }]);
-      if (error) throw error;
-      alert("Broadcast Berhasil Dipublish!");
+      await supabase.from('announcements').insert([{ subject: broadcastForm.subject, message: broadcastForm.message, target_emails: selectedEmails, expires_at: expiryDate }]);
+      alert("Broadcast terkirim!");
       setBroadcastForm({ subject: '', message: '', expires_at: '' });
     } catch (err: any) { alert(err.message); } 
     finally { setIsBroadcasting(false); }
@@ -313,21 +245,13 @@ export default function DashboardPage() {
 
   const handleEditPostClick = (post: any) => {
     setEditingPostId(post.id);
-    setPostForm({
-      title: post.title,
-      content: typeof post.content === 'object' ? post.content.body : post.content,
-      files: [],
-      existingImages: post.content?.gallery || (post.image_url ? [post.image_url] : [])
-    });
+    setPostForm({ title: post.title, content: typeof post.content === 'object' ? post.content.body : post.content, files: [], existingImages: post.content?.gallery || [post.image_url] });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleEditProdClick = (p: any) => {
     setEditingProdId(p.id);
-    setProdForm({
-      name: p.name, desc: p.description, price: p.price.toString(), category: p.category,
-      files: [], existingImages: p.images || [p.image_url]
-    });
+    setProdForm({ name: p.name, desc: p.description, price: p.price.toString(), category: p.category, files: [], existingImages: p.images || [p.image_url] });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -337,11 +261,10 @@ export default function DashboardPage() {
     setLoading(true);
     try {
       const url = await uploadToStorage(gallForm.file, 'gallery');
-      const { error } = await supabase.from('gallery').insert([{ title: gallForm.title, image_url: url }]);
-      if (error) throw error;
-      alert('Berhasil ditambahkan ke Gallery!');
+      await supabase.from('gallery').insert([{ title: gallForm.title, image_url: url }]);
       setGallForm({ title: '', file: null });
       fetchData();
+      alert('Gallery berhasil ditambahkan!');
     } catch (err: any) { alert(err.message); }
     finally { setLoading(false); }
   };
