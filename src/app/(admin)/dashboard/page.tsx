@@ -14,7 +14,7 @@ export default function DashboardPage() {
   const router = useRouter(); 
   const [activeTab, setActiveTab] = useState<'insight' | 'products' | 'gallery' | 'subscribers' | 'reviews' | 'projects'>('insight');
   const [loading, setLoading] = useState(false);
-  const [currentUser, setCurrentUser] = useState<any>(null); // State User untuk RLS
+  const [currentUser, setCurrentUser] = useState<any>(null);
   
   const [posts, setPosts] = useState<any[]>([]);
   const [products, setProducts] = useState<any[]>([]);
@@ -51,20 +51,25 @@ export default function DashboardPage() {
 
   const [gallForm, setGallForm] = useState({ title: '', file: null as File | null });
 
-  // --- LOGIKA AUTH SINKRON ---
+  // --- LOGIKA AUTH & FETCH (FIXED) ---
   useEffect(() => { 
-    const checkUser = async () => {
+    const initDashboard = async () => {
+      // 1. Ambil session dulu
       const { data: { session } } = await supabase.auth.getSession();
+      
       if (!session) {
         router.push('/login');
-      } else {
-        setCurrentUser(session.user);
-        fetchData();
+        return;
       }
+      
+      // 2. Set user dan langsung tarik data (agar preview muncul)
+      setCurrentUser(session.user);
+      fetchData();
     };
 
-    checkUser();
+    initDashboard();
 
+    // Pantau perubahan auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if (session) {
         setCurrentUser(session.user);
@@ -78,21 +83,34 @@ export default function DashboardPage() {
 
   async function fetchData() {
     setLoading(true); 
-    const { data: postsData } = await supabase.from('posts').select('*').order('created_at', { ascending: false });
-    const { data: prodData } = await supabase.from('products').select('*').order('created_at', { ascending: false });
-    const { data: gallData } = await supabase.from('gallery').select('*').order('created_at', { ascending: false });
-    const { data: subData } = await supabase.from('subscribers').select('*').order('created_at', { ascending: false });
-    const { data: revData } = await supabase.from('reviews').select('*').order('created_at', { ascending: false });
-    const { data: projData } = await supabase.from('project_experience').select('*').order('project_no', { ascending: false });
-    
-    if (postsData) setPosts(postsData);
-    if (prodData) setProducts(prodData);
-    if (gallData) setGallery(gallData);
-    if (subData) setSubscribers(subData);
-    if (revData) setReviews(revData);
-    if (projData) setProjects(projData);
-    
-    setLoading(false);
+    try {
+      const [
+        { data: postsData }, 
+        { data: prodData }, 
+        { data: gallData }, 
+        { data: subData }, 
+        { data: revData }, 
+        { data: projData }
+      ] = await Promise.all([
+        supabase.from('posts').select('*').order('created_at', { ascending: false }),
+        supabase.from('products').select('*').order('created_at', { ascending: false }),
+        supabase.from('gallery').select('*').order('created_at', { ascending: false }),
+        supabase.from('subscribers').select('*').order('created_at', { ascending: false }),
+        supabase.from('reviews').select('*').order('created_at', { ascending: false }),
+        supabase.from('project_experience').select('*').order('project_no', { ascending: false })
+      ]);
+      
+      if (postsData) setPosts(postsData);
+      if (prodData) setProducts(prodData);
+      if (gallData) setGallery(gallData);
+      if (subData) setSubscribers(subData);
+      if (revData) setReviews(revData);
+      if (projData) setProjects(projData);
+    } catch (error) {
+      console.error("Fetch error:", error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   const uploadToStorage = async (file: File, folder: string) => {
@@ -106,9 +124,12 @@ export default function DashboardPage() {
   // --- HANDLER POST (INSIGHT) ---
   const handleAddPost = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return alert("Sesi tidak ditemukan, silakan refresh.");
     setLoading(true);
     try {
+      // Ambil user terbaru untuk memastikan token valid
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sesi tidak ditemukan, silakan login ulang.");
+
       let imageUrls: string[] = [...postForm.existingImages];
       if (postForm.files.length > 0) {
         for (const file of postForm.files) {
@@ -123,7 +144,7 @@ export default function DashboardPage() {
         content: { body: postForm.content, gallery: imageUrls },
         image_url: imageUrls[0] || '',
         slug: postForm.title.toLowerCase().trim().replace(/[^\w\s-]/g, '').replace(/[\s_-]+/g, '-'),
-        author_id: currentUser.id 
+        author_id: user.id 
       };
 
       if (editingPostId) {
@@ -142,14 +163,17 @@ export default function DashboardPage() {
     finally { setLoading(false); }
   };
 
-  // --- HANDLER PRODUK ---
+  // --- HANDLER PRODUK (FIXED RLS) ---
   const handleAddProduct = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!currentUser) return alert("Sesi tidak ditemukan.");
-    if (!editingProdId && prodForm.files.length === 0) return alert('Pilih minimal 1 gambar produk!');
-    if (!prodForm.category) return alert('Pilih kategori produk!');
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sesi tidak ditemukan.");
+
+      if (!editingProdId && prodForm.files.length === 0) throw new Error('Pilih minimal 1 gambar produk!');
+      if (!prodForm.category) throw new Error('Pilih kategori produk!');
+
       let imageUrls: string[] = [...prodForm.existingImages];
       if (prodForm.files.length > 0) {
         for (const file of prodForm.files) {
@@ -159,8 +183,9 @@ export default function DashboardPage() {
       }
       const productData = { 
         name: prodForm.name, description: prodForm.desc, price: parseFloat(prodForm.price), 
-        category: prodForm.category, image_url: imageUrls[0], images: imageUrls          
+        category: prodForm.category, image_url: imageUrls[0], images: imageUrls           
       };
+
       if (editingProdId) {
         const { error } = await supabase.from('products').update(productData).eq('id', editingProdId);
         if (error) throw error;
@@ -181,6 +206,9 @@ export default function DashboardPage() {
     e.preventDefault();
     setLoading(true);
     try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Sesi tidak ditemukan.");
+
       const pData = { 
         project_no: parseInt(projectForm.no), 
         project_name: projectForm.name, 
