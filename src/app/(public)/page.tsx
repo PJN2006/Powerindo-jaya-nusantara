@@ -7,6 +7,7 @@ import Reveal from '@/components/layout/Reveal'
 import { MessageCircle, Phone, ArrowRight } from 'lucide-react' 
 import Link from 'next/link'
 import AnnouncementBar from '@/components/layout/AnnouncementBar'
+import FloatingContact from '@/components/layout/FloatingContact'
 
 // Komponen Divider untuk transisi halus
 export function SectionDivider() {
@@ -194,25 +195,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* FLOATING WHATSAPP BUTTON */}
-      <div className="fixed bottom-8 right-8 z-100 flex flex-col items-end group">
-        <div className="flex flex-col gap-3 mb-4 opacity-0 translate-y-4 pointer-events-none group-hover:opacity-100 group-hover:translate-y-0 group-hover:pointer-events-auto transition-all duration-300">
-          {[
-            { name: "Customer Service 1", num: "6281252505111" },
-            { name: "Customer Service 2", num: "6282245616400" }
-          ].map((cs, i) => (
-            <a key={i} href={`https://wa.me/${cs.num}`} target="_blank" rel="noopener noreferrer" className="bg-white text-brand-dark px-4 py-3 rounded-2xl shadow-2xl border border-slate-100 flex items-center gap-3 hover:bg-slate-50 transition-colors font-bold text-sm">
-              <div className="bg-brand-primary p-1.5 rounded-lg text-white">
-                <Phone size={14} />
-              </div>
-              {cs.name}
-            </a>
-          ))}
-        </div>
-        <button className="bg-brand-primary text-white p-5 rounded-full shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300">
-          <MessageCircle size={32} fill="currentColor" />
-        </button>
-      </div>
+      <FloatingContact />
     </main>
   );
 }

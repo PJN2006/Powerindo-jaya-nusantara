@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { supabase } from '@/lib/supabase'
 import Reveal from '@/components/layout/Reveal'
 import { Award, Target, ShieldCheck, Zap, History, CheckCircle2, Briefcase, ChevronLeft, ChevronRight } from 'lucide-react'
+import FloatingContact from '@/components/layout/FloatingContact'
 
 export default function AboutPage() {
   const [projects, setProjects] = useState<any[]>([])
@@ -255,6 +256,7 @@ export default function AboutPage() {
           </div>
         </Reveal>
       </section>
+      <FloatingContact />
     </main>
   )
 }
