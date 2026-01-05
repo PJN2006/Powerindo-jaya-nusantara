@@ -8,9 +8,6 @@ import { MessageCircle, Phone, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import AnnouncementBar from '@/components/layout/AnnouncementBar'
 import FloatingContact from '@/components/layout/FloatingContact'
-import { motion } from 'framer-motion'
-
-const MotionLink = motion.create(Link)
 
 // Komponen Divider untuk transisi halus
 export function SectionDivider() {
