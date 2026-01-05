@@ -52,10 +52,10 @@ export default async function HomePage() {
                 </p>
               </div>
               <div className="space-y-6">
-                <p className="text-xl text-slate-600 leading-relaxed">
+                <p className="text-xl text-brand-dark leading-relaxed">
                   Kami mendedikasikan diri untuk memberikan solusi teknik terbaik bagi sektor industri di Indonesia.
                 </p>
-                <p className="text-slate-600">
+                <p className="text-brand-dark">
                   Visi Kami: Menjadi perusahaan penyedia solusi peralatan listrik terkemuka yang mengutamakan kualitas produk dan keunggulan teknis di setiap karya.
                 </p>
                 <div className="pt-6">
