@@ -82,27 +82,6 @@ export default function Footer() {
               </li>
             </ul>
           </div>
-
-          {/* Column 4: Support / CTA (Replacement for Subscribe) */}
-          <div className="bg-white/5 p-8 rounded-3xl border border-white/5">
-            <h4 className="font-bold mb-4 uppercase tracking-widest text-sm text-brand-primary">Official Support</h4>
-            <p className="text-slate-400 mb-6 text-xs leading-relaxed">
-              Butuh konsultasi teknis atau penawaran harga cepat? Hubungi tim ahli kami sekarang.
-            </p>
-            <a 
-              href="https://wa.me/6281252505111" 
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center justify-center gap-3 bg-[#2DC653] hover:bg-[#1A7431] text-white font-black py-4 rounded-2xl transition-all shadow-lg shadow-green-900/20 text-[10px] tracking-widest uppercase w-full"
-            >
-              <MessageCircle size={18} fill="currentColor" />
-              Chat WhatsApp
-            </a>
-            <div className="mt-6 pt-6 border-t border-white/5">
-              <p className="text-[10px] text-slate-500 font-bold uppercase tracking-tighter">Office Hours:</p>
-              <p className="text-[10px] text-slate-400">Senin - Sabtu: 08.00 - 17.00 WIB</p>
-            </div>
-          </div>
         </div>
 
         {/* Bottom Bar */}
