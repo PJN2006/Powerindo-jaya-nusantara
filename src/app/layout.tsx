@@ -51,7 +51,11 @@ export default function RootLayout({
       <body className={`${jakarta.variable} ${jakarta.className} antialiased`}>
         <SmoothScroll>
           <Navbar />
-          <PageTransition>{children}</PageTransition>
+          <main>
+            <PageTransition>
+              {children}
+            </PageTransition>
+          </main>
           <Footer />
         </SmoothScroll>
 

@@ -8,9 +8,6 @@ import { MessageCircle, Phone, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
 import AnnouncementBar from '@/components/layout/AnnouncementBar'
 import FloatingContact from '@/components/layout/FloatingContact'
-import { motion } from 'framer-motion'
-
-const MotionLink = motion.create(Link)
 
 // Komponen Divider untuk transisi halus
 export function SectionDivider() {
@@ -188,17 +185,13 @@ export default async function HomePage() {
             <p className="text-slate-400 text-lg mb-12 max-w-2xl mx-auto">
               Konsultasikan kebutuhan infrastruktur listrik dan solusi energi perusahaan Anda bersama mitra teknologi terpercaya.
             </p>
-            <MotionLink 
-            href="/contact" 
-            whileHover={{ 
-              scale: 1.05,
-              boxShadow: "0px 0px 25px rgba(45, 198, 83, 0.6)", // Glow Hijau (Warna Powerindo)
-            }}
-            whileTap={{ scale: 0.95 }}
-            className="inline-flex items-center gap-4 px-12 py-6 bg-brand-primary text-white font-bold rounded-full shadow-2xl transition-all group"
-          >
-            START A PROJECT WITH US <ArrowRight size={20} />
-          </MotionLink>
+            // Ganti MotionLink Anda dengan Link standar kembali
+            <Link 
+              href="/contact" 
+              className="inline-flex items-center gap-4 px-12 py-6 bg-brand-primary text-white font-bold rounded-full shadow-2xl hover:scale-105 transition-all group"
+            >
+              START A PROJECT WITH US <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform" />
+            </Link>
           </Reveal>
         </div>
       </section>
