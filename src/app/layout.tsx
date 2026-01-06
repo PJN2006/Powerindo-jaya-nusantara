@@ -22,7 +22,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Powerindo Jaya Nusantara | Mechanical Electrical Contractor",
     description: "Solusi infrastruktur listrik dan mekanikal terpadu. Produk lengkap dengan standar kualitas internasional.",
-    url: "https://powerindojayanusantara.vercel.app/", 
+    url: "https://powerindojayanusantara.com/", 
     siteName: "Powerindo Jaya Nusantara",
     images: [
       {
