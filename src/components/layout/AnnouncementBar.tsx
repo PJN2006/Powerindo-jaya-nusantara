@@ -12,7 +12,6 @@ export default function AnnouncementBar() {
     fetchLatestAnnouncement()
   }, [])
 
-  // LOGIKA BARU: Mengatur jarak Navbar agar tidak tertutup
   useEffect(() => {
     if (isVisible && announcement) {
       document.documentElement.style.setProperty('--announcement-height', '40px');
@@ -21,36 +20,26 @@ export default function AnnouncementBar() {
     }
   }, [isVisible, announcement]);
 
-  // LOGIKA OTOMATIS: Cek kedaluwarsa setiap 30 detik
-  useEffect(() => {
-    const interval = setInterval(() => {
-      if (announcement?.expires_at) {
-        const now = new Date();
-        const expiry = new Date(announcement.expires_at);
-        
-        if (now > expiry) {
-          setIsVisible(false); 
-        }
-      }
-    }, 30000); 
-
-    return () => clearInterval(interval);
-  }, [announcement]);
-
   async function fetchLatestAnnouncement() {
-    const now = new Date().toISOString();
-    const { data } = await supabase
-        .from('announcements')
-        .select('*')
-        .or(`expires_at.is.null,expires_at.gt."${now}"`) 
-        .order('created_at', { ascending: false })
-        .limit(1)
-        .single()
-    
-    if (data){
-        setAnnouncement(data);
-    } else {
-        setAnnouncement(null);
+    try {
+      const now = new Date().toISOString();
+      const { data, error } = await supabase
+          .from('announcements')
+          .select('*')
+          .eq('is_public', true) // Filter hanya yang publik
+          .or(`expires_at.is.null,expires_at.gt."${now}"`) 
+          .order('created_at', { ascending: false })
+          .limit(1);
+      
+      if (error) throw error;
+
+      if (data && data.length > 0){
+          setAnnouncement(data[0]);
+      } else {
+          setAnnouncement(null);
+      }
+    } catch (err) {
+      console.error("Error fetching announcement:", err);
     }
   }
 
@@ -58,31 +47,28 @@ export default function AnnouncementBar() {
 
   return (
     <AnimatePresence>
-      {isVisible && announcement && (
-        <motion.div 
-          initial={{ height: 0, opacity: 0 }}
-          animate={{ height: '40px', opacity: 1 }}
-          exit={{ height: 0, opacity: 0 }}
-          // z-index ditingkatkan sedikit ke 101 agar berada di atas Navbar
-          className="fixed top-0 left-0 w-full z-101 bg-brand-primary text-white flex items-center shadow-md overflow-hidden"
-        >
-          <div className="max-w-7xl mx-auto w-full px-6 flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3 overflow-hidden">
-              <Megaphone size={14} className="shrink-0 animate-bounce" />
-              <p className="text-[10px] md:text-xs font-bold truncate uppercase tracking-wider">
-                <span className="opacity-70 mr-2">[{announcement.subject}]</span>
-                {announcement.message}
-              </p>
+      <motion.div 
+        initial={{ height: 0, opacity: 0 }}
+        animate={{ height: '40px', opacity: 1 }}
+        exit={{ height: 0, opacity: 0 }}
+        className="fixed top-0 left-0 w-full z-9999] bg-brand-primary text-white flex items-center shadow-md overflow-hidden"
+      >
+        <div className="max-w-7xl mx-auto w-full px-6 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 overflow-hidden">
+            <Megaphone size={14} className="shrink-0 animate-bounce" />
+            <div className="flex items-center text-[10px] md:text-xs font-bold truncate uppercase tracking-wider">
+              <span className="opacity-70 mr-2 shrink-0">[{announcement.subject}]</span>
+              <span className="truncate">{announcement.message}</span>
             </div>
-            <button 
-              onClick={() => setIsVisible(false)}
-              className="p-1 hover:bg-white/20 rounded-full transition-colors"
-            >
-              <X size={14} />
-            </button>
           </div>
-        </motion.div>
-      )}
+          <button 
+            onClick={() => setIsVisible(false)}
+            className="p-1 hover:bg-white/20 rounded-full transition-colors shrink-0"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      </motion.div>
     </AnimatePresence>
   )
 }
